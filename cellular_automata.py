@@ -9,18 +9,27 @@ from panda3d.core import Point3, PointLight, VBase4, NodePath, Geom, GeomVertexW
 
 SR2 = 2**.5
 NUM_ROWS = 20
-HALFLIFE = 100
+#HALFLIFE = 100
+START_DENSITY_TEST = .1
+SURVIVAL_RULES_TEST = {0: False, 1: False, 2: True, 3: True, 4: True, 5: False, 6: False, 7: False, 8: False, 9: False, 10: False, 11: False, 12: False}
+BIRTH_RULES_TEST = {0: False, 1: False, 2: False, 3: True, 4: True, 5: False, 6: False, 7: False, 8: False, 9: False, 10: False, 11: False, 12: False}
 
 class Rhomdo(NodePath):
     def __init__(self,x,y,z,array):
         self.geomnode = GeomNode("rhomdo")
         super(Rhomdo,self).__init__(self.geomnode)
         self.x, self.y, self.z = x,y,z
+        self.odd = self.z%2 == 1
         self.id = x*(NUM_ROWS**2) + y*NUM_ROWS + z
         self.array = array
         self.color = (x/NUM_ROWS),(y/NUM_ROWS),(z/NUM_ROWS),1
         self.lifespan = -HALFLIFE*log2(1-random.random())
-        self.hidden = False
+        self.scheduled_alive = True
+
+        if random.random() < START_DENSITY:
+            self.be_born()
+        else:
+            self.die()
         
         format = GeomVertexFormat.getV3c4() 
         vdata = GeomVertexData("vertices", format, Geom.UHStatic) 
@@ -35,9 +44,9 @@ class Rhomdo(NodePath):
         realX = self.x*2 - NUM_ROWS
         realY = self.y*2 - NUM_ROWS
         realZ = self.z*SR2 - SR2*.5*NUM_ROWS
-        if self.z%2 == 1:
-            realX += .5
-            realY += .5
+        if self.odd:
+            realX += 1
+            realY += 1
         
         vertexWriter.addData3f(realX,   realY,   realZ+SR2)
         
@@ -171,14 +180,45 @@ class Rhomdo(NodePath):
         #now put squareGeom in a GeomNode. You can now position your geometry in the scene graph. 
         self.geomnode.addGeom(rhomGeom)
 
-    def update(self,time):
-        if time > self.lifespan and not self.hidden:
-            self.hide()
-            self.hidden = True
+    def determine_life(self):
+        if self.alive:
+            self.scheduled_alive = SURVIVAL_RULES[self.adjacent_alive()]
+        else:
+            self.scheduled_alive = BIRTH_RULES[self.adjacent_alive()]
 
-class MyApp(ShowBase):
+    def enact_life(self):
+        if self.scheduled_alive and not self.alive:
+            self.be_born()
+        elif not self.scheduled_alive and self.alive:
+            self.die()
+
+    def die(self):
+        self.hide()
+        self.alive = False
+
+    def be_born(self):
+        self.show()
+        self.alive = True
+
+    def adjacent_alive(self):
+        if self.odd:
+            adjacents = [(1,0,0),(0,1,0),(-1,0,0),(0,-1,0),(0,0,1),(1,0,1),(0,1,1),(1,1,1),(0,0,-1),(1,0,-1),(0,1,-1),(1,1,-1)]
+        else:
+            adjacents = [(1,0,0),(0,1,0),(-1,0,0),(0,-1,0),(0,0,1),(-1,0,1),(0,-1,1),(-1,-1,1),(0,0,-1),(-1,0,-1),(0,-1,-1),(-1,-1,-1)]
+
+        result = 0
+        for adjacent in adjacents:
+            adjX, adjY, adjZ = (self.x+adjacent[0]),(self.y+adjacent[1]),(self.z+adjacent[2])
+            if not (-1 in (adjX,adjY,adjZ)) and not (NUM_ROWS in (adjX,adjY,adjZ)):
+                result += (1 if self.array[adjX][adjY][adjZ].alive else 0)
+        return result
+
+class Game(ShowBase):
     def __init__(self):
-        ShowBase.__init__(self)
+        ShowBase.__init__(self,_survival_rules,_birth_rules,_start_density)
+        self.SURVIVAL_RULES = _SURVIVAL_RULES
+        self.BIRTH_RULES = _BIRTH_RULES
+        self.START_DENSITY = _START_DENSITY
 
         self.rhomdos = []
 
@@ -203,7 +243,7 @@ class MyApp(ShowBase):
         render.setLight(self.plnp)
  
         # Disable the camera trackball controls.
-        self.disableMouse()
+        #self.disableMouse()
  
         # Load the environment model.
         #self.scene = NodePath()
@@ -216,6 +256,16 @@ class MyApp(ShowBase):
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
         self.taskMgr.add(self.updateClock, "UpdateClock")
         self.clock = 0
+
+        #to_kill = [(0,0,0),(0,0,1),(2,2,2)]
+        #for x,y,z in to_kill:
+        #    self.rhomdos[x][y][z].die()
+
+        #for x in range(NUM_ROWS):
+        #    for y in range(NUM_ROWS):
+        #        for z in range(NUM_ROWS):
+        #            rhomdo = self.rhomdos[x][y][z]
+        #            print(x,y,z,rhomdo.alive,rhomdo.adjacent_alive())
  
     # Define a procedure to move the camera.
     def spinCameraTask(self, task):
@@ -229,17 +279,20 @@ class MyApp(ShowBase):
         for x in range(NUM_ROWS):
             for y in range(NUM_ROWS):
                 for z in range(NUM_ROWS):
-                    #print(self.rhomdos[x][y][z].id)
-                    self.rhomdos[x][y][z].update(self.clock)
+                    self.rhomdos[x][y][z].determine_life()
+        for x in range(NUM_ROWS):
+            for y in range(NUM_ROWS):
+                for z in range(NUM_ROWS):
+                    self.rhomdos[x][y][z].enact_life()
         return Task.cont
 
     def updateClock(self, task):
-        adjusted_time = task.time * 20
+        adjusted_time = task.time * 5
         if round(adjusted_time) > self.clock:
             self.clock = round(adjusted_time)
             print(self.clock)
             self.updateRhomdos()
         return Task.cont
  
-app = MyApp()
+app = Game(SURVIVAL_RULES_TEST,BIRTH_RULES_TEST,START_DENSITY_TEST)
 app.run()
