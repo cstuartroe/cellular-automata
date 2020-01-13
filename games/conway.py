@@ -1,4 +1,5 @@
 import random
+import numpy as np
 from .game import CellSpec, Game
 
 
@@ -39,6 +40,17 @@ class Conway(Game):
     def print_grid(self):
         for row in self.grid:
             print(''.join([('X' if c else '.') for c in row]))
+
+    def compute_neighbors(self):
+        vert_pad = np.zeros((self.height, 1))
+        hor_pad = np.zeros((1, self.width))
+        right = np.delete(np.concatenate((self.np_grid, vert_pad), axis=1), 0, axis=1)
+        left = np.delete(np.concatenate((vert_pad, self.np_grid), axis=1), self.width, axis=1)
+        bottom = np.delete(np.concatenate((self.np_grid, hor_pad), axis=0), 0, axis=0)
+        top = np.delete(np.concatenate((hor_pad, self.np_grid), axis=0), self.height, axis=0)
+
+        return top, bottom, left, right
+
 
 
 if __name__ == "__main__":
