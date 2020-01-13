@@ -1,13 +1,17 @@
 import random
+from .game import CellSpec, Game
 
 
-class ConwayGrid:
+class Conway(Game):
+    GRID_DIMENSIONS = 2
+    CELL_SPEC = CellSpec([
+        {0, 1}
+    ])
+
     def __init__(self, width, height, survive=[2, 3], spawn=[3]):
-        self.width = width
-        self.height = height
+        super().__init__((width, height), Conway.CELL_SPEC)
         self.survive = survive
         self.spawn = spawn
-        self.grid = [[(True if random.randrange(2) == 1 else False) for x in range(width)] for y in range(height)]
 
     def advance(self):
         newgrid = []
@@ -38,9 +42,10 @@ class ConwayGrid:
 
 
 if __name__ == "__main__":
-    g = ConwayGrid(10, 10)
+    g = Conway(10, 10)
+    print(g.grid)
 
-    for i in range(10):
-        g.print_grid()
-        print()
-        g.advance()
+    # for i in range(10):
+    #     g.print_grid()
+    #     print()
+    #     g.advance()
