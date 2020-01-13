@@ -1,10 +1,12 @@
 import numpy as np
 
-from .game import CellSpec, Game
+from .game import CellSpec, RuleSetSpec, Game
 
 
 class Conway(Game):
+
     CELL_SPEC = CellSpec([{0, 1}])
+    RULE_SPEC = RuleSetSpec(dimensions=18, var_type='categorical')
 
     def __init__(self, width, height, survive=[2, 3], spawn=[3]):
         super().__init__((width, height), Conway.CELL_SPEC)

@@ -1,5 +1,5 @@
 from games import conway
-import numpy as np
+import numpy
 
 def percent_cells_changed(game):
     first_frame = game.grid[0]

@@ -1,6 +1,12 @@
 import numpy
 
 
+class RuleSetSpec:
+    def __init__(self, dimension, var_type):
+        self.dimension = dimension
+        self.var_type = var_type
+
+
 class CellSpec:
     def __init__(self, params):
         self.params = params
