@@ -1,15 +1,18 @@
 import numpy as np
 
-from .game import CellSpec, RuleSetSpec, Game
+from .game import Dimension, Spec, Game
+
+
+def conway_generator(init_alive_prob):
+    return (lambda a: np.where(a > init_alive_prob, 0, 1))
 
 
 class Conway(Game):
+    RULE_SPEC = Spec([Dimension("categorical", conway_generator(.5), categories={0, 1})]*18)
 
-    CELL_SPEC = CellSpec([{0, 1}])
-    RULE_SPEC = RuleSetSpec(dimensions=18, var_type='categorical')
-
-    def __init__(self, width, height, survive=[2, 3], spawn=[3]):
-        super().__init__((width, height), Conway.CELL_SPEC)
+    def __init__(self, width, height, survive=[2, 3], spawn=[3], init_alive_prob=.25):
+        cell_spec = Spec([Dimension("categorical", conway_generator(init_alive_prob), categories={0, 1})])
+        super().__init__((width, height), cell_spec)
         self.survive = survive
         self.spawn = spawn
 
@@ -74,3 +77,9 @@ class Conway(Game):
 
     def cell_similarity(self, cell1, cell2):
         return 1 if (self.grid[cell1][0] == self.grid[cell2][0]) else 0
+
+    @staticmethod
+    def rulevector2args(rulevector):
+        survive = list(rulevector[:9])
+        spawn = list(rulevector[9:])
+        return [], {"survive": survive, "spawn": spawn}

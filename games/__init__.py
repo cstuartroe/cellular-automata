@@ -1,2 +1,2 @@
-from .game import CellSpec, Game
+from .game import Spec, Game
 from .conway import Conway

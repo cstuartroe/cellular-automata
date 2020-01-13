@@ -33,6 +33,8 @@ class ConwayGraphics:
 
     def run(self):
         while True:
+            root.update_idletasks()
             self.draw()
             root.update()
+            time.sleep(.1)
             self.game.advance()
