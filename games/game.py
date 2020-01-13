@@ -25,3 +25,14 @@ class Game:
 
     def advance(self):
         raise NotImplementedError("advancing not yet implemented!")
+
+    def advances(self, n):
+        for i in range(n):
+            self.advance()
+
+    @staticmethod
+    def cartesian_distance(cell1, cell2):
+        raise NotImplementedError("cartesian distance not yet implemented!")
+
+    def cell_similarity(self, cell1, cell2):
+        raise NotImplementedError("advancing not yet implemented!")

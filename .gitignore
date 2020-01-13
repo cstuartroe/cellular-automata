@@ -1,6 +1,4 @@
 venv
 .idea
 __pycache__
-sb.py
-speed.py
-
+test.py

@@ -1,9 +1,9 @@
 import numpy as np
+
 from .game import CellSpec, Game
 
 
 class Conway(Game):
-
     CELL_SPEC = CellSpec([{0, 1}])
 
     def __init__(self, width, height, survive=[2, 3], spawn=[3]):
@@ -13,7 +13,7 @@ class Conway(Game):
 
     def advance(self):
         old_grid = self.grid[-1, :, :, 0]
-        neighbor_matrix = Conway.static_neighbors(old_grid)
+        neighbor_matrix = Conway.neighbors(old_grid)
         new_grid = np.zeros((self.shape[0], self.shape[1]))
 
         np.place(new_grid, (np.isin(neighbor_matrix, self.survive) & (old_grid == 1)), 1)
@@ -52,7 +52,7 @@ class Conway(Game):
         return np.sum(np.dstack(arrays), axis)
 
     @staticmethod
-    def static_neighbors(matrix):
+    def neighbors(matrix):
         a = Conway.shift_right(matrix)
         b = Conway.shift_down(matrix)
         c = Conway.shift_up(matrix)
@@ -62,9 +62,13 @@ class Conway(Game):
         g = Conway.shift_down(Conway.shift_left(matrix))
         h = Conway.shift_down(Conway.shift_right(matrix))
 
-        tup = (a,b,c,d,e,f,g,h)
+        tup = (a, b, c, d, e, f, g, h)
 
         return Conway.collapse_and_sum(tup, 2)
 
-    def get_grid(self):
-        return self.grid
+    @staticmethod
+    def cartesian_distance(cell1, cell2):
+        return ((cell1[1] - cell2[1])**2 + (cell1[2] - cell2[2])**2)**.5
+
+    def cell_similarity(self, cell1, cell2):
+        return 1 if (self.grid[cell1][0] == self.grid[cell2][0]) else 0
