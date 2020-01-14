@@ -23,6 +23,37 @@ class RulesetLearner:
 
         return sum(outputs)/len(outputs)
 
+    def careful_explore(self, known_states, epsilon=0.3, steps=10):
+
+        dimensions = self.game_class.RULE_SPEC.dimensions
+
+        for i in range(steps):
+            if random.uniform(0, 1) < epsilon:
+                action = self.game_class.RULE_SPEC.generate()
+
+            else:
+
+                try:
+                    action = np.asarray(max(known_states.items(), key=operator.itemgetter(1))[0])
+                except ValueError:
+                    action = self.game_class.RULE_SPEC.generate()
+
+                num_dims = len(action)
+                change = random.randint(0, num_dims-1)
+
+                if dimensions[change].dtype == 'categorical':
+                    action[change] = random.choice(list(dimensions[change].categories))
+                elif dimensions[change].dtype == 'integer':
+                    action[change] = random.randint(dimensions[change].start, dimensions[change].end)
+                else:
+                    while action[change] < dimensions[change].start or action[change] > dimensions[change].end:
+                        action[change] += random.uniform(-1,1)
+
+            reward = self.monte_ruleset(action)
+            act_tup = tuple(action)
+            known_states[act_tup] = reward
+
+        return known_states
 
     """
     :param rulevector: Numeric vector of the rule space (tuple).
