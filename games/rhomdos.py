@@ -1,7 +1,5 @@
 import numpy as np
 
-from direct.task import Task
-
 from .game import Dimension, Spec, Game
 from .matrix_utils import add_shifts, direction_combinations
 from .conway import conway_generator
@@ -46,14 +44,25 @@ class Rhomdos(Game):
         self.spawn = spawn
 
     def advance(self):
+        old_grid = self.grid[-1, :, :, :, 0]
+        neighbor_matrix = Rhomdos.neighbors(old_grid)
+        new_grid = np.zeros(self.shape, dtype=int)
+
+        np.place(new_grid, (np.isin(neighbor_matrix, self.survive) & (old_grid == 1)), 1)
+        np.place(new_grid, (np.isin(neighbor_matrix, self.spawn) & (old_grid == 0)), 1)
+
+        new_grid = np.reshape(new_grid, (1, *new_grid.shape, 1))
+
+        self.grid = np.concatenate((self.grid, new_grid), axis=0)
+
+    @staticmethod
+    def neighbors(matrix):
         lateral_neighbor_directions = [(0, 0, 1), (0, 0, -1), (0, 1, 0), (0, -1, 0)]
         odd_vertical_neighbor_directions = direction_combinations((1, -1), (0, -1), (0, -1))
         even_vertical_neighbor_directions = direction_combinations((1, -1), (0, 1), (0, 1))
 
-        odd_neighbors = add_shifts(self.grid[-1, :, :, :, 0], lateral_neighbor_directions + odd_vertical_neighbor_directions)
-        even_neighbors = add_shifts(self.grid[-1, :, :, :, 0], lateral_neighbor_directions + even_vertical_neighbor_directions)
+        odd_neighbors = add_shifts(matrix, lateral_neighbor_directions + odd_vertical_neighbor_directions)
+        even_neighbors = add_shifts(matrix, lateral_neighbor_directions + even_vertical_neighbor_directions)
 
-        neighbors = np.where(np.mgrid[0:self.shape[0], 0:self.shape[1], 0:self.shape[2]][0] % 2 == 0,
-                            even_neighbors, odd_neighbors)
-
-        return Task.cont
+        return np.where(np.mgrid[0:matrix.shape[0], 0:matrix.shape[1], 0:matrix.shape[2]][0] % 2 == 0,
+                        even_neighbors, odd_neighbors)

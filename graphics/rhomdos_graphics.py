@@ -185,10 +185,6 @@ class GameRender(ShowBase):
                     rr = RhomdoRender((z, y, x), game.shape)
                     render.attachNewNode(rr.geomnode)
                     self.rhomdos[-1][-1].append(rr)
-                    if game.grid[-1, z, y, x, 0] == 1:
-                        rr.show()
-                    else:
-                        rr.hide()
 
         plight = PointLight('plight')
         plight.setColor(VBase4(1, 1, 1, 1))
@@ -199,20 +195,32 @@ class GameRender(ShowBase):
 
         # Add the spinCameraTask procedure to the task manager.
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
-        # self.taskMgr.add(self.updateClock, "UpdateClock")
+        self.taskMgr.add(self.updateClock, "UpdateClock")
         self.clock = 0
 
     # Define a procedure to move the camera.
     def spinCameraTask(self, task):
-        angleDegrees = task.time * 6.0
+        angleDegrees = task.time * 40.0
         angleRadians = angleDegrees * (pi / 180.0)
         self.camera.setPos(100 * sin(angleRadians), -100.0 * cos(angleRadians), 50)
         self.camera.setHpr(angleDegrees, -30, 0)
         return Task.cont
 
     def updateClock(self, task):
-        adjusted_time = task.time * 5
+        adjusted_time = task.time * 8
         if round(adjusted_time) > self.clock:
+            self.updateRhomdos()
             self.clock = round(adjusted_time)
-            self.game.updateRhomdos()
         return Task.cont
+
+    def updateRhomdos(self):
+        self.game.advance()
+        depth, height, width = self.game.shape
+        for z in range(depth):
+            for y in range(height):
+                for x in range(width):
+                    rr = self.rhomdos[z][y][x]
+                    if self.game.grid[-1, z, y, x, 0] == 1:
+                        rr.show()
+                    else:
+                        rr.hide()
