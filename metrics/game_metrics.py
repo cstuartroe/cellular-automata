@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def percent_cells_changed(game):
     first_frame = game.grid[0]
     equals_first_frame = np.array([np.equal(frame, first_frame) for frame in game.grid])
@@ -14,3 +15,5 @@ def cell_change_frequency(game):
     return np.sum(is_changed)/is_changed.size
 
 
+def sparse_change(game):
+    return percent_cells_changed(game)*(1 - cell_change_frequency(game))
