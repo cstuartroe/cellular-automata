@@ -10,11 +10,13 @@ SR2 = 2 ** .5
 
 
 class RhomdoRender(NodePath):
-    def __init__(self, rhomdo, num_rows):
-        self.rhomdo = rhomdo
+    def __init__(self, position, gridshape):
         self.geomnode = GeomNode("rhomdo")
         super().__init__(self.geomnode)
-        self.color = (rhomdo.x / num_rows), (rhomdo.y / num_rows), (rhomdo.z / num_rows), 1
+
+        z, y, x = position
+        depth, height, width = gridshape
+        self.color = (x / width), (y / height), (z / depth), 1
 
         format = GeomVertexFormat.getV3c4()
         vdata = GeomVertexData("vertices", format, Geom.UHStatic)
@@ -26,10 +28,11 @@ class RhomdoRender(NodePath):
         for i in range(14):
             colorWriter.addData4f(*self.color)
 
-        realX = rhomdo.x * 2 - num_rows
-        realY = rhomdo.y * 2 - num_rows
-        realZ = rhomdo.z * SR2 - SR2 * .5 * num_rows
-        if self.rhomdo.odd:
+        realX = x * 2 - width
+        realY = y * 2 - height
+        realZ = z * SR2 - SR2 * .5 * depth
+        odd = z % 2 == 1
+        if odd:
             realX += 1
             realY += 1
 
@@ -171,23 +174,32 @@ class GameRender(ShowBase):
         self.game = game
         ShowBase.__init__(self)
 
-        for depth in self.game.rhomdos:
-            for column in depth:
-                for rhomdo in column:
-                    rr = RhomdoRender(rhomdo, game.num_rows)
-                    rhomdo.add_rr(rr)
+        depth, height, width = game.shape
+        self.rhomdos = []
+
+        for z in range(depth):
+            self.rhomdos.append([])
+            for y in range(height):
+                self.rhomdos[-1].append([])
+                for x in range(width):
+                    rr = RhomdoRender((z, y, x), game.shape)
                     render.attachNewNode(rr.geomnode)
+                    self.rhomdos[-1][-1].append(rr)
+                    if game.grid[-1, z, y, x, 0] == 1:
+                        rr.show()
+                    else:
+                        rr.hide()
 
         plight = PointLight('plight')
         plight.setColor(VBase4(1, 1, 1, 1))
         plight.setAttenuation((0, 0, .0005))
         self.plnp = render.attachNewNode(plight)
-        self.plnp.setPos(0, 0, (game.num_rows * SR2) + 40)
+        self.plnp.setPos(0, 0, (game.shape[0] * SR2) + 40)
         render.setLight(self.plnp)
 
         # Add the spinCameraTask procedure to the task manager.
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
-        self.taskMgr.add(self.updateClock, "UpdateClock")
+        # self.taskMgr.add(self.updateClock, "UpdateClock")
         self.clock = 0
 
     # Define a procedure to move the camera.

@@ -86,14 +86,3 @@ class Game:
     def rulevector2args(rulevector):
         """Maps a numpy vector within a ruleset space to an actual args and kwargs to pass to game_class.__init__"""
         raise NotImplementedError("rulevector2args not yet implemented!")
-
-
-def shift(matrix, direction):
-    for dim, distance in enumerate(direction):
-        hor_pad = np.zeros(matrix.shape[:dim] + (abs(distance),) + matrix.shape[dim+1:], dtype=matrix.dtype)
-        if distance > 0:
-            matrix = np.delete(np.concatenate((hor_pad, matrix), axis=dim), np.s_[-distance:], axis=dim)
-        elif distance < 0:
-            matrix = np.delete(np.concatenate((matrix, hor_pad), axis=dim), np.s_[:-distance], axis=dim)
-
-    return matrix

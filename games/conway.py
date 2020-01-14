@@ -1,6 +1,7 @@
 import numpy as np
 
-from .game import Dimension, Spec, Game, shift
+from .game import Dimension, Spec, Game
+from .matrix_utils import add_shifts, direction_combinations
 
 
 def conway_generator(init_alive_prob):
@@ -36,23 +37,10 @@ class Conway(Game):
             print()
 
     @staticmethod
-    def collapse_and_sum(arrays, axis):
-        return np.sum(np.dstack(arrays), axis, dtype=int)
-
-    @staticmethod
     def neighbors(matrix):
-        up = shift(matrix, (1, 0))
-        down = shift(matrix, (-1, 0))
-        left = shift(matrix, (0, -1))
-        right = shift(matrix, (0, 1))
-        up_left = shift(matrix, (1, -1))
-        up_right = shift(matrix, (1, 1))
-        down_left = shift(matrix, (-1, -1))
-        down_right = shift(matrix, (-1, 1))
-
-        tup = (up, down, left, right, up_left, up_right, down_left, down_right)
-
-        return Conway.collapse_and_sum(tup, 2)
+        neighbor_directions = direction_combinations((-1, 0, 1), (-1, 0, 1))
+        neighbor_directions.remove((0, 0))
+        return add_shifts(matrix, neighbor_directions)
 
     @staticmethod
     def cartesian_distance(cell1, cell2):
