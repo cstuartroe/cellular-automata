@@ -3,3 +3,4 @@ venv
 __pycache__
 test.py
 .DS_Store
+rule_set.txt
