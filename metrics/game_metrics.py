@@ -17,3 +17,38 @@ def cell_change_frequency(game):
 
 def sparse_change(game):
     return percent_cells_changed(game)*(1 - cell_change_frequency(game))
+
+
+def random_position(game):
+    return tuple([np.random.randint(width) for width in game.shape])
+
+
+def local_similarity(game):
+    local_similarities = []
+    global_similarities = []
+
+    num_frames = game.grid.shape[0]
+
+    for frame in range(num_frames):
+        random_position1 = (frame,) + random_position(game)
+        random_position2 = (frame,) + random_position(game)
+
+        global_similarities.append(game.cell_similarity(random_position1, random_position2))
+
+    for frame in range(num_frames):
+        random_position1 = (frame,) + random_position(game)
+        random_position2 = None
+
+        while random_position2 is None:
+            rand_dim = np.random.randint(len(game.shape))
+            if random_position1[rand_dim+1] + 1 < game.shape[rand_dim]:
+                random_position2 = random_position1[:rand_dim+1] +\
+                                   (random_position1[rand_dim+1] + 1,) +\
+                                   random_position1[rand_dim+2:]
+
+        local_similarities.append(game.cell_similarity(random_position1, random_position2))
+
+    print(local_similarities)
+    print(global_similarities)
+
+    return sum(local_similarities)/(sum(global_similarities) + 1)
