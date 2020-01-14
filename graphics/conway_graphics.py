@@ -13,14 +13,14 @@ class ConwayGraphics:
 
     def __init__(self, game):
         self.game = game
-        self.canv = tk.Canvas(master=root, width=600, height=600)
+        self.canv = tk.Canvas(master=root, width=1000, height=1000*game.shape[0]/game.shape[1])
         self.canv.pack()
 
     def draw(self):
         self.canv.delete("all")
 
         last_frame = self.game.grid[-1]
-        grid_width, grid_height = self.game.grid.shape[1:3]
+        grid_height, grid_width = self.game.shape
 
         for x in range(grid_width):
             for y in range(grid_height):
