@@ -1,3 +1,8 @@
+import numpy as np
+import random
+import operator
+
+
 class RulesetLearner:
     def __init__(self, game_class, objective_function, game_args, game_kwargs, num_frames, num_trials):
         self.game_class = game_class
@@ -7,11 +12,8 @@ class RulesetLearner:
         self.num_frames = num_frames
         self.num_trials = num_trials
 
-    def rulevector2args(self, rulevector):
-        raise NotImplementedError("New game not yet implemented!")
-
     def monte_ruleset(self, rulevector):
-        ruleargs, rulekwargs = self.rulevector2args(rulevector)
+        ruleargs, rulekwargs = self.game_class.rulevector2args(rulevector)
         outputs = []
 
         for i in range(self.num_trials):
@@ -20,3 +22,69 @@ class RulesetLearner:
             outputs.append(self.objective_function(game))
 
         return sum(outputs)/len(outputs)
+
+
+    """
+    :param rulevector: Numeric vector of the rule space (tuple).
+    :param Q: Dictionary {state:reward}
+    :param epsilon: exploration rate
+    :return: Q — state/action logs (dict) , sprime — the next step to take (tuple), reward — from previous step (float)
+    """
+    def q_learn(self, rulevector, Q, gamma=0.9, lr=0.75, epsilon=0.3):
+
+        state = tuple(rulevector)
+
+        if random.uniform(0,1) < epsilon:
+
+            action = tuple(self.game_class.RULE_SPEC.generate())
+            Q, reward = self.q_update(state, Q, action, gamma, lr)
+
+        else:
+
+            action = self.q_get_max(Q, state)
+            Q, reward = self.q_update(state, Q, action, gamma, lr)
+
+        sprime = action
+
+        return Q, sprime, reward
+
+    def q_get_max(self, Q, state):
+        try:
+            action = max(Q[state].items(), key=operator.itemgetter(1))[0]
+        except ValueError:
+            # This is the lower bound of the interesting scale.
+            max_action = 0
+
+            for state, act in Q.items():
+                try:
+                    maximum = max(Q[state].items(), key=operator.itemgetter(1))
+                except ValueError:
+                    maximum = ((1,), -1)
+                if maximum[1] > max_action:
+                    action = maximum[0]
+
+        except KeyError:
+            Q[state] = {}
+            action = tuple(self.game_class.RULE_SPEC.generate())
+
+        return action
+
+    def q_update(self, state, Q, action, gamma, lr):
+        reward = self.monte_ruleset(action)
+        sprime = action
+
+        try:
+            maximum = max(Q[sprime].items(), key=operator.itemgetter(1))[1]
+        except ValueError:
+            maximum = 0
+        except KeyError:
+            Q[sprime] = {}
+            maximum = 0
+
+        try:
+            Q[state][action] = Q[state][action] + lr * (reward + gamma * maximum - Q[state][action])
+        except KeyError:
+            Q[state] = {}
+            Q[state][action] = lr * (reward + gamma * maximum)
+
+        return Q, reward
