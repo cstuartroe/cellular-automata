@@ -113,6 +113,6 @@ class ProbabilisticConway(Conway):
 
     @staticmethod
     def rulevector2args(rulevector):
-        survive = list(rulevector[:9])
-        spawn = list(rulevector[9:])
+        survive = rulevector[:9]
+        spawn = rulevector[9:]
         return [], {"survive": survive, "spawn": spawn}

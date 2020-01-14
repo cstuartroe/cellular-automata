@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import operator
+from tqdm import tqdm
 
 
 class RulesetLearner:
@@ -23,11 +24,19 @@ class RulesetLearner:
 
         return sum(outputs)/len(outputs)
 
-    def careful_explore(self, known_states, epsilon=0.3, steps=10):
+    def careful_explore(self, known_states, epsilon=0.3, steps=10, verbose=False, write_to_file='tests/rule_set.txt'):
 
         dimensions = self.game_class.RULE_SPEC.dimensions
 
-        for i in range(steps):
+        iterator = range(steps)
+
+        if verbose:
+            iterator = tqdm(range(steps))
+
+        if verbose:
+            print('Now exploring...')
+
+        for i in iterator:
             if random.uniform(0, 1) < epsilon:
                 action = self.game_class.RULE_SPEC.generate()
 
@@ -53,7 +62,17 @@ class RulesetLearner:
             act_tup = tuple(action)
             known_states[act_tup] = reward
 
-        return known_states
+        max_info = max(known_states.items(), key=operator.itemgetter(1))
+
+        rule_set = max_info[0]
+        value = max_info[1]
+
+        if write_to_file:
+            with open(write_to_file, 'w') as file:
+                file.write(str(rule_set) + '\n' + str('Objective function value: ' + str(value)))
+                file.close()
+
+        return known_states, rule_set, value
 
     """
     :param rulevector: Numeric vector of the rule space (tuple).
