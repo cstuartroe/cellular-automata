@@ -1,32 +1,20 @@
 import numpy as np
-from scipy.ndimage.measurements import label
 
-class Components():
-    def __init__(self, game):
+from games import Game
+
+
+class Components:
+    def __init__(self, game: Game):
         self.game = game
         self.frame_num = self.game.grid.shape[0]
         self.grid = self.game.grid
-        self.world_shape = self.get_world_shape()
         self.visited = np.zeros(self.grid.shape, dtype=bool)
-        self.num_dim = len(self.world_shape)
-
-    def get_world_shape(self):
-        shape = self.game.grid.shape
-        dimension = []
-        which = 1
-
-        for dim in shape:
-            if (which != 1) and (which != len(shape)):
-                dimension.append(dim)
-            which += 1
-
-        return tuple(dimension)
+        self.num_dim = len(self.game.shape)
 
     def get_components(self):
         components = []
 
         for f in range(self.frame_num):
-
             ones = np.where(self.grid[f] == 1)
             w = len(ones[0])
             indices = []
@@ -44,9 +32,7 @@ class Components():
 
         return components
 
-
     def recur_components(self, start_coord, comp_list, frame):
-
         frame_tup = (frame, )
         tail = (0,)
         neighbors = self.get_neighbor_coords(start_coord)
@@ -84,7 +70,7 @@ class Components():
 
     def is_valid_coord(self, cell):
         for i in range(self.num_dim):
-            if cell[i] < 0 or cell[i] >= self.world_shape[i]:
+            if cell[i] < 0 or cell[i] >= self.game.shape[i]:
                 return False
 
         return True
