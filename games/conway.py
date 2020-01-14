@@ -1,6 +1,6 @@
 import numpy as np
 
-from .game import Dimension, Spec, Game
+from .game import Dimension, Spec, Game, shift
 
 
 def conway_generator(init_alive_prob):
@@ -36,41 +36,21 @@ class Conway(Game):
             print()
 
     @staticmethod
-    def shift_down(matrix):
-        hor_pad = np.zeros((1, matrix.shape[1]))
-        return np.delete(np.concatenate((hor_pad, matrix), axis=0), matrix.shape[0], axis=0)
-
-    @staticmethod
-    def shift_up(matrix):
-        hor_pad = np.zeros((1, matrix.shape[1]))
-        return np.delete(np.concatenate((matrix, hor_pad), axis=0), 0, axis=0)
-
-    @staticmethod
-    def shift_left(matrix):
-        vert_pad = np.zeros((matrix.shape[0], 1))
-        return np.delete(np.concatenate((matrix, vert_pad), axis=1), 0, axis=1)
-
-    @staticmethod
-    def shift_right(matrix):
-        vert_pad = np.zeros((matrix.shape[0], 1))
-        return np.delete(np.concatenate((vert_pad, matrix), axis=1), matrix.shape[1], axis=1)
-
-    @staticmethod
     def collapse_and_sum(arrays, axis):
         return np.sum(np.dstack(arrays), axis, dtype=int)
 
     @staticmethod
     def neighbors(matrix):
-        a = Conway.shift_right(matrix)
-        b = Conway.shift_down(matrix)
-        c = Conway.shift_up(matrix)
-        d = Conway.shift_left(matrix)
-        e = Conway.shift_up(Conway.shift_left(matrix))
-        f = Conway.shift_up(Conway.shift_right(matrix))
-        g = Conway.shift_down(Conway.shift_left(matrix))
-        h = Conway.shift_down(Conway.shift_right(matrix))
+        up = shift(matrix, (1, 0))
+        down = shift(matrix, (-1, 0))
+        left = shift(matrix, (0, -1))
+        right = shift(matrix, (0, 1))
+        up_left = shift(matrix, (1, -1))
+        up_right = shift(matrix, (1, 1))
+        down_left = shift(matrix, (-1, -1))
+        down_right = shift(matrix, (-1, 1))
 
-        tup = (a, b, c, d, e, f, g, h)
+        tup = (up, down, left, right, up_left, up_right, down_left, down_right)
 
         return Conway.collapse_and_sum(tup, 2)
 

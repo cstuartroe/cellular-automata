@@ -48,7 +48,4 @@ def local_similarity(game):
 
         local_similarities.append(game.cell_similarity(random_position1, random_position2))
 
-    print(local_similarities)
-    print(global_similarities)
-
     return sum(local_similarities)/(sum(global_similarities) + 1)
