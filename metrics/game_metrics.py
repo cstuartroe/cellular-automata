@@ -12,3 +12,5 @@ def percent_cells_changed(game):
 def cell_change_frequency(game):
     is_changed = np.array([np.logical_not(np.equal(game.grid[t], game.grid[t+1])) for t in range(game.grid.shape[0]-1)])
     return np.sum(is_changed)/is_changed.size
+
+
