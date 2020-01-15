@@ -27,6 +27,7 @@ class RhomdoRender(NodePath):
 
         for i in range(14):
             colorWriter.addData4f(*self.color)
+            self.color = max(self.color[0] - .03, 0), max(self.color[1] - .03, 0), max(self.color[2] - .03, 0), 1
 
         realX = x * 2 - width
         realY = y * 2 - height
@@ -169,7 +170,7 @@ class RhomdoRender(NodePath):
         self.geomnode.addGeom(rhomGeom)
 
 
-class GameRender(ShowBase):
+class RhomdosRender(ShowBase):
     def __init__(self, game):
         self.game = game
         ShowBase.__init__(self)
@@ -202,7 +203,7 @@ class GameRender(ShowBase):
     def spinCameraTask(self, task):
         angleDegrees = task.time * 40.0
         angleRadians = angleDegrees * (pi / 180.0)
-        self.camera.setPos(100 * sin(angleRadians), -100.0 * cos(angleRadians), 50)
+        self.camera.setPos(45 * sin(angleRadians), -45 * cos(angleRadians), 25)
         self.camera.setHpr(angleDegrees, -30, 0)
         return Task.cont
 
