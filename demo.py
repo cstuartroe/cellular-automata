@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     else:
         if args.ruleset == "deterministic":
-            game = Rhomdos(10, 10, 10, survive=[2, 3, 4], spawn=[4], init_alive_prob=.25)
+            game = Rhomdos(15, 15, 15, survive=[2, 3, 4], spawn=[4], init_alive_prob=.25)
         else:
             raise NotImplementedError("Probabilistic rhomdos not yet implemented!")
         app = RhomdosRender(game)

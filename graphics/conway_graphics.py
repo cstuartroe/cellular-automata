@@ -12,7 +12,7 @@ class ConwayGraphics:
     DEAD_COLOR = "#000044"
     HIGHLIGHTED_COLOR = "#00ff00"
 
-    def __init__(self, game, components=True):
+    def __init__(self, game, components=False):
         self.game = game
         self.canv = tk.Canvas(master=root, width=1000, height=1000*game.shape[0]/game.shape[1])
         self.canv.pack()

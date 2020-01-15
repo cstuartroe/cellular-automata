@@ -203,7 +203,7 @@ class RhomdosRender(ShowBase):
     def spinCameraTask(self, task):
         angleDegrees = task.time * 40.0
         angleRadians = angleDegrees * (pi / 180.0)
-        self.camera.setPos(45 * sin(angleRadians), -45 * cos(angleRadians), 25)
+        self.camera.setPos(60 * sin(angleRadians), -60 * cos(angleRadians), 32)
         self.camera.setHpr(angleDegrees, -30, 0)
         return Task.cont
 
