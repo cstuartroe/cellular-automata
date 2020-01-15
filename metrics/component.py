@@ -1,36 +1,80 @@
 import numpy as np
 
 from games import Game
+from games.matrix_utils import direction_combinations
+
+
+class UnionFind:
+    def __init__(self, iterable):
+        self.set_keys = {}
+        self.sets_by_key = {}
+
+        for element in iterable:
+            self.set_keys[element] = element
+            self.sets_by_key[element] = {element}
+
+    def find_set_key(self, element):
+        if self.set_keys[element] == element:
+            return element
+        else:
+            set_key = self.find_set_key(self.set_keys[element])
+            self.set_keys[element] = set_key
+            return set_key
+
+    def find(self, element):
+        return self.sets_by_key[self.find_set_key(element)]
+
+    def union(self, element1, element2):
+        set_key1 = self.find_set_key(element1)
+        set_key2 = self.find_set_key(element2)
+
+        if set_key1 == set_key2:
+            return
+
+        self.sets_by_key[set_key1] = self.sets_by_key[set_key1] | self.sets_by_key[set_key2]
+        del self.sets_by_key[set_key2]
+
+        self.set_keys[set_key2] = set_key1
+
+    def get_sets(self):
+        return list(self.sets_by_key.values())
 
 
 class Components:
     def __init__(self, game: Game):
         self.game = game
-        self.frame_num = self.game.grid.shape[0]
-        self.grid = self.game.grid
-        self.visited = np.zeros(self.grid.shape, dtype=bool)
         self.num_dim = len(self.game.shape)
 
-    def get_components(self):
-        components = []
+    def get_components(self, frames=None):
+        frames_components = []
 
-        for f in range(self.frame_num):
-            ones = np.where(self.grid[f] == 1)
-            w = len(ones[0])
-            indices = []
-            s = np.stack(ones)
+        if frames is None:
+            frames = range(self.game.grid.shape[0])
 
-            for i in range(w):
-                inter = tuple(s[:, i])
-                indices.append(inter[:len(inter)-1])
+        for frame_num in frames:
+            frames_components.append(self.frame_components(frame_num))
 
-            for i in indices:
-                comp_list = []
-                comp = self.recur_components(i, comp_list, f)
-                if comp:
-                    components.append(comp)
+        return frames_components
 
-        return components
+    def frame_components(self, frame_num):
+        frame_grid = self.game.grid[frame_num, :, :, 0]
+
+        alive_cells = np.stack(np.where(frame_grid == 1), axis=1)
+        alive_cells = [tuple(c) for c in alive_cells]
+        components = UnionFind(alive_cells)
+
+        neighbor_directions = direction_combinations((-1, 0, 1), (-1, 0, 1))
+        neighbor_directions.remove((0, 0))
+
+        for alive_cell in alive_cells:
+            for neighbor_direction in neighbor_directions:
+                neighbor_address = tuple(np.add(alive_cell, neighbor_direction))
+                if self.is_valid_coord(neighbor_address):
+                    neighbor = frame_grid[neighbor_address]
+                    if neighbor == 1:
+                        components.union(alive_cell, neighbor_address)
+
+        return components.get_sets()
 
     def recur_components(self, start_coord, comp_list, frame):
         frame_tup = (frame, )

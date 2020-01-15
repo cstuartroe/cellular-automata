@@ -13,14 +13,7 @@ def shift(matrix, direction):
 
 
 def add_shifts(matrix, shifts):
-    # print("adding shifts")
-    # print(matrix)
     arrays = [shift(matrix, direction) for direction in shifts]
-    # for i in range(len(shifts)):
-    #     print(list(shifts)[i])
-    #     print(arrays[i])
-    # print(np.sum(np.array(arrays), 0, dtype=matrix.dtype))
-    # print()
     return np.sum(np.array(arrays), 0, dtype=matrix.dtype)
 
 
