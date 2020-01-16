@@ -6,3 +6,5 @@ test.py
 rule_set.txt
 *.h5
 training_logs/
+*.p
+storage/

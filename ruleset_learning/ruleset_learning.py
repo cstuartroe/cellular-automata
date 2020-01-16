@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras import models, layers
 import datetime
 import time
+import os
 
 
 class RulesetLearner:
@@ -20,6 +21,7 @@ class RulesetLearner:
         self.packed_samples = np.zeros((100, self.game_class.RULE_SPEC.num_dimensions))
         self.packed_labels = np.zeros((100, 1))
         self.packed_count = 0
+        self.best = []
 
     def monte_ruleset(self, rulevector):
         ruleargs, rulekwargs = self.game_class.rulevector2args(rulevector)
@@ -41,7 +43,6 @@ class RulesetLearner:
 
         print("Based on your parameters, explore will run approximately " + str(its) + " times.")
         time.sleep(5)
-        best = []
 
         if init_on_first:
             print('Training initial model...')
@@ -49,38 +50,53 @@ class RulesetLearner:
                                         validation_samples=validation_samples, save_to=save_to)
 
         while epsilon <= 1:
+
             print('Starting step ' + str(step))
+            self.deep_explore_iteration(epsilon=epsilon, grad_step_scalar=grad_step_scalar,
+                                        num_best=num_best, cut_off_increment=cut_off_increment, save_to=save_to)
             step += 1
-            new_test = self.game_class.RULE_SPEC.generate()
-
-            cut_off = random.uniform(0,1)
-
-            while cut_off < epsilon:
-                gs = abs(epsilon-cut_off)
-                print('Fetching gradient descent step...')
-                new_test, og_loss, new_loss = self.deep_suggestion(ruleset=new_test, new_training=False,
-                                                lr=lr, grad_step_scalar=(grad_step_scalar*gs), save_to=save_to)
-                cut_off += cut_off_increment
-
-            result = self.monte_ruleset(new_test)
             epsilon += epsilon_increment
 
-            print("Pushing to continued training...")
-            self.continue_training(new_test, result, load_from=save_to)
+        return self.best
 
-            if len(best) < num_best:
-                best.append((new_test, result))
-            else:
-                min_of_best = min(best, key = lambda t: t[1])
-                if result > min_of_best[1]:
-                    print('Deleting value...')
-                    best.sort(key=operator.itemgetter(1))
-                    del best[0]
-                    best.append((new_test, result))
+    def training_sample(self, epsilon, cut_off_increment=0.05, load_from='trained_model.h5', grad_step_scalar=10):
 
-        best.sort(key=operator.itemgetter(1))
+        new_test = self.game_class.RULE_SPEC.generate()
 
-        return best
+        cut_off = random.uniform(0, 1)
+
+        while cut_off < epsilon:
+            gs = abs(epsilon - cut_off)
+            print('Fetching gradient descent step...')
+            new_test, og_loss, new_loss = self.deep_suggestion(ruleset=new_test, new_training=False,
+                                                               grad_step_scalar=(grad_step_scalar * gs),
+                                                               load_from=load_from)
+            cut_off += cut_off_increment
+
+        return new_test
+
+    def deep_explore_iteration(self, epsilon, grad_step_scalar=10,
+                               num_best=20, cut_off_increment=0.05, save_to='trained_model.h5'):
+
+        new_test = self.training_sample(epsilon=epsilon, grad_step_scalar=grad_step_scalar, load_from=save_to,
+                                        cut_off_increment=cut_off_increment)
+
+        result = self.monte_ruleset(new_test)
+
+        print("Pushing to continued training...")
+        self.continue_training(new_test, result, load_from=save_to)
+
+        if len(self.best) < num_best:
+            self.best.append((new_test, result))
+        else:
+            min_of_best = min(self.best, key=lambda t: t[1])
+            if result > min_of_best[1]:
+                print('Deleting value...')
+                self.best.sort(key=operator.itemgetter(1))
+                del self.best[0]
+                self.best.append((new_test, result))
+
+        self.best.sort(key=operator.itemgetter(1))
 
     def deep_suggestion(self, ruleset, new_training=False, lr=0.005,
                         train_samples=1000, validation_samples=100, save_to='trained_model.h5',
@@ -168,6 +184,7 @@ class RulesetLearner:
         loss = tf.losses.MeanAbsoluteError()
 
         model.compile(optimizer=opt, loss=loss, metrics=[met])
+        model.save('storage/models/untrained_model.h5')
         model.summary()
 
         print('Fetching training data...')
@@ -207,14 +224,19 @@ class RulesetLearner:
 
     def continue_training(self, ruleset, value, load_from='trained_model.h5'):
 
-        if self.packed_count == 100:
+        ruleset = np.reshape(np.asarray(ruleset), (self.game_class.RULE_SPEC.num_dimensions, ))
+
+        if self.packed_count == 2:
             print('Triggered new training.')
             data = tf.data.Dataset.from_tensor_slices((self.packed_samples, self.packed_labels))
             self.packed_count = 0
             data = data.map(self.shape_tensor)
             print('Loading model...')
 
-            model = tf.keras.models.load_model(load_from)
+            if os.path.isfile(load_from):
+                model = tf.keras.models.load_model(load_from)
+            else:
+                model = tf.keras.models.load_model('storage/models/untrained_model.h5')
 
             model.fit(data, epochs=5, verbose=1)
             model.save(load_from)
