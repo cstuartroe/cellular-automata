@@ -7,7 +7,10 @@ from tensorflow.keras import models, layers
 import datetime
 import time
 import os
+import logging
 
+INFO_LOGGER = logging.getLogger('info_logger')
+ERROR_LOGGER = logging.getLogger('error_logger')
 
 class RulesetLearner:
     def __init__(self, game_class, objective_function, game_args, game_kwargs, num_frames, num_trials):
@@ -22,6 +25,8 @@ class RulesetLearner:
         self.packed_labels = np.zeros((100, 1))
         self.packed_count = 0
         self.best = []
+        self.first_train = True
+
 
     def monte_ruleset(self, rulevector):
         ruleargs, rulekwargs = self.game_class.rulevector2args(rulevector)
@@ -61,13 +66,14 @@ class RulesetLearner:
 
     def training_sample(self, epsilon, cut_off_increment=0.05, load_from='trained_model.h5', grad_step_scalar=10):
 
+        INFO_LOGGER.info('Starting training sample process...')
         new_test = self.game_class.RULE_SPEC.generate()
 
         cut_off = random.uniform(0, 1)
 
         while cut_off < epsilon:
             gs = abs(epsilon - cut_off)
-            print('Fetching gradient descent step...')
+            INFO_LOGGER.info('Fetching gradient descent step...')
             new_test, og_loss, new_loss = self.deep_suggestion(ruleset=new_test, new_training=False,
                                                                grad_step_scalar=(grad_step_scalar * gs),
                                                                load_from=load_from)
@@ -228,24 +234,48 @@ class RulesetLearner:
 
         ruleset = np.reshape(np.asarray(ruleset), (self.game_class.RULE_SPEC.num_dimensions, ))
 
-        if self.packed_count == 25:
-            print('Triggered new training.')
+        if self.first_train:
+            train_thresh = 5
+            self.first_train = False
+        else:
+            train_thresh = 25
+
+        INFO_LOGGER.info(f'The current training threshold is {train_thresh} and there are {self.packed_count} stored samples.')
+
+        if self.packed_count == train_thresh:
+            INFO_LOGGER.info('Triggered new training sequence...')
             data = tf.data.Dataset.from_tensor_slices((self.packed_samples, self.packed_labels))
             self.packed_count = 0
             data = data.map(self.shape_tensor)
-            print('Loading model...')
+
+            INFO_LOGGER.info('Attempting to load model...')
 
             if os.path.isfile(load_from):
-                model = tf.keras.models.load_model(load_from)
+                try:
+                    model = tf.keras.models.load_model(load_from)
+                    INFO_LOGGER.info(f'Loaded model from {load_from}')
+                except Exception as e:
+                    ERROR_LOGGER.exception(f'Failed to load model from {load_from}')
             else:
-                model = tf.keras.models.load_model('storage/models/untrained_model.h5')
+                try:
+                    model = tf.keras.models.load_model('storage/models/untrained_model.h5')
+                    INFO_LOGGER.info(f'Loaded model from storage/models/untrained_model.h5')
+                except Exception as e:
+                    ERROR_LOGGER.exception(f'Failed to load model from storage/models/untrained_model.h5')
 
-            model.fit(data, epochs=5, verbose=1)
+            try:
+                model.fit(data, epochs=5, verbose=1)
+                INFO_LOGGER.info('Model successfully fit!')
+            except Exception as e:
+                ERROR_LOGGER.exception(f'Failed to fit model...')
+
             model.save(load_from)
 
         else:
             self.packed_samples[self.packed_count] = ruleset
             self.packed_labels[self.packed_count] = value
+
+            INFO_LOGGER.info(f'Successfully stored sample. There are now {self.packed_count+1} samples stored.')
 
         self.packed_count += 1
 

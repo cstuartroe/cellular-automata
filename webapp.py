@@ -9,10 +9,19 @@ import os
 import pickle
 from graphics import RedVsBlueGraphics
 import numpy as np
+import logging
+from logging import INFO, ERROR
 
 GAME_NAME = 'RedVsBlue'
-EPSILON_START = -1
+EPSILON_START = 0.025
 EPSILON_STEP = 0.005
+INFO_LOGGER = logging.getLogger('info_logger')
+ERROR_LOGGER = logging.getLogger('error_logger')
+ERROR_LOGGER.isEnabledFor(ERROR)
+FRAMES = 50
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                    level=INFO, filename='storage/logs/cellauto.log', filemode='w')
 
 
 def random_string(stringLength=5):
@@ -21,22 +30,35 @@ def random_string(stringLength=5):
 
 
 if os.path.isfile(f'storage/pickles/{GAME_NAME}_learner.p'):
-    r = pickle.load(open(f"storage/pickles/{GAME_NAME}_learner.p", "rb"))
+    try:
+        r = pickle.load(open(f"storage/pickles/{GAME_NAME}_learner.p", "rb"))
+        INFO_LOGGER.info(f'Successfully loaded {GAME_NAME}_learner pickle.')
+    except Exception as e:
+        ERROR_LOGGER.exception(f'Could not load {GAME_NAME}_learner pickle.')
+
 else:
     r = RL.RulesetLearner(RedVsBlue, sparse_change, game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
     r.train_suggestion_model(init_only=True)
     with open('storage/epsilon.txt', 'w+') as file:
         file.write(str(EPSILON_START))
+    INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {EPSILON_START}.')
 
 @app.route('/')
 def rate_ruleset():
 
     with open('storage/epsilon.txt', 'r') as file:
         epsilon = eval(file.read())
+        INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
 
     sess_id = random_string()
     file_name = f'storage/images/{GAME_NAME}_{sess_id}.gif'
-    new_test = r.training_sample(epsilon=epsilon)
+
+    INFO_LOGGER.info(f'Starting generation sequence for {sess_id}.')
+    model_load_from = f'storage/models/{GAME_NAME}_model.h5'
+
+    new_test = r.training_sample(epsilon=epsilon, load_from=model_load_from)
+
+    INFO_LOGGER.info(f'Finished generation sequence for {sess_id}')
 
     epsilon += EPSILON_STEP
 
@@ -51,7 +73,8 @@ def rate_ruleset():
     conway = RedVsBlue(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
 
     con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
-    con_graphs.run(50)
+    con_graphs.run(FRAMES)
+    INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
 
     with open(f'storage/games/{GAME_NAME}_{sess_id}.p', 'wb') as file:
         pickle.dump(conway, file)
@@ -65,6 +88,8 @@ def submit():
     sess_id = request.args['id']
     rating = int(request.args['rating'])
 
+    INFO_LOGGER.info(f'Starting submit sequence for {sess_id} with rating {rating}')
+
     if rating == 1:
         dec_rating = 0.
     elif rating == 2:
@@ -76,18 +101,28 @@ def submit():
     elif rating == 5:
         dec_rating = 1.
 
-    with open(f'storage/rulesets/{GAME_NAME}_{sess_id}.txt', 'r') as file:
-        rule_set = eval(file.read())
-        rule_array = np.asarray(rule_set)
+    try:
+        with open(f'storage/rulesets/{GAME_NAME}_{sess_id}.txt', 'r') as file:
+            rule_set = eval(file.read())
+            rule_array = np.asarray(rule_set)
+            INFO_LOGGER.info(f'Successfully loaded {sess_id} txt file.')
+    except Exception as e:
+        ERROR_LOGGER.exception(f'Failed to load {sess_id} txt file.')
 
     with open(f'storage/rulesets/{GAME_NAME}_{sess_id}.txt', 'a') as file:
         file.write('\n')
         file.write(str(dec_rating))
 
-    r.continue_training(ruleset=rule_array, value=dec_rating, load_from=f'storage/models/{GAME_NAME}_model.h5')
+    INFO_LOGGER.info('Starting continue training sequence...')
+    model_load_from = f'storage/models/{GAME_NAME}_model.h5'
+    INFO_LOGGER.info(f'If necessary, the model will be loaded from {model_load_from}')
+    r.continue_training(ruleset=rule_array, value=dec_rating, load_from=model_load_from)
+    INFO_LOGGER.info('Finished continued training sequence.')
 
     with open(f'storage/pickles/{GAME_NAME}_learner.p', 'wb') as file:
         pickle.dump(r, file)
+
+    INFO_LOGGER.info(f'Finished submission sequence for {sess_id}')
 
     return 'Thank you! <a href="/">Do another?</a>'
 
