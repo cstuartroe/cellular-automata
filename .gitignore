@@ -8,3 +8,4 @@ rule_set.txt
 training_logs/
 *.p
 storage/
+*.ini

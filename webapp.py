@@ -38,7 +38,7 @@ def rate_ruleset():
 
     conway = RedVsBlue(**rule_kwargs, width=50, height=50, init_alive_prob=0.25)
     con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
-    con_graphs.run(50)
+    con_graphs.run(5)
 
     with open("web/rate_ruleset.html", "r") as fh:
         return fh.read().replace('###', id)
