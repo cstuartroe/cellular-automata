@@ -39,7 +39,7 @@ class Dimension:
             assert(all(s in list(range(self.start, self.end)) for s in samples))
 
         elif dtype == "continuous":
-            assert(isinstance(start, float) and isinstance(end, float))
+            assert(type(start) in [float, int] and type(end) in [float, int])
             self.start = start
             self.end = end
             assert(all((start <= s < end) for s in samples))

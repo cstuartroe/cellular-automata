@@ -65,7 +65,7 @@ class GridGraphics:
             if not self.as_gif:
                 self.root.update_idletasks()
                 self.root.update()
-                time.sleep(.1)
+                # time.sleep(.1)
 
             self.draw()
             self.game.advance()
@@ -74,9 +74,9 @@ class GridGraphics:
         if self.as_gif:
             with imageio.get_writer(self.gif_name, mode='I') as writer:
                 for im in self.images:
-                    im.save("test.png")
+                    im.save("storage/test.png")
                     for i in range(GridGraphics.GIF_REPEAT_FRAMES):
-                        writer.append_data(imageio.imread("test.png"))
+                        writer.append_data(imageio.imread("storage/test.png"))
 
 
 class ConwayGraphics(GridGraphics):
@@ -104,4 +104,37 @@ class ConwayGraphics(GridGraphics):
         for component in components:
             color = "#" + hex(randrange(256**3))[2:].ljust(6, '0')
             for y, x in component:
+                self.draw_cell(color, x, y)
+
+
+def rgb2hex(r, g, b):
+    h = "#"
+    for color in r, g, b:
+        h += hex(int(color*255))[2:].rjust(2, '0')
+    return h
+
+
+class RedVsBlueGraphics(GridGraphics):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, components=False, **kwargs)
+
+    def make_shapes(self):
+        alive_cells = self.game.grid[-1, :, :, 0]
+        cell_colors = self.game.grid[-1, :, :, 1]
+
+        for x in range(self.game.shape[1]):
+            for y in range(self.game.shape[0]):
+                if alive_cells[y][x]:
+                    if cell_colors[y][x] < 0:
+                        red = 1
+                        green = cell_colors[y][x] + 1
+                        blue = green
+                    else:
+                        red = 1 - cell_colors[y][x]
+                        green = red
+                        blue = 1
+                    color = rgb2hex(red, green, blue)
+                else:
+                    color = "#000000"
+
                 self.draw_cell(color, x, y)

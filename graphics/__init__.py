@@ -1,2 +1,2 @@
-from .conway_graphics import ConwayGraphics
+from .grid_graphics import ConwayGraphics, RedVsBlueGraphics
 from .rhomdos_graphics import RhomdosRender
