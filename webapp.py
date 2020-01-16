@@ -51,7 +51,7 @@ def rate_ruleset():
     conway = RedVsBlue(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
 
     con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
-    con_graphs.run(25)
+    con_graphs.run(50)
 
     with open(f'storage/games/{GAME_NAME}_{sess_id}.p', 'wb') as file:
         pickle.dump(conway, file)
