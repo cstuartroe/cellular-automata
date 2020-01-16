@@ -168,7 +168,8 @@ class RulesetLearner:
 
         return rst
 
-    def train_suggestion_model(self, lr=0.005, train_samples=1000, validation_samples=100, save_to='trained_model.h5'):
+    def train_suggestion_model(self, lr=0.005, train_samples=1000, validation_samples=100,
+                               save_to='trained_model.h5', init_only=False):
 
         dim = self.game_class.RULE_SPEC.num_dimensions
 
@@ -187,18 +188,19 @@ class RulesetLearner:
         model.save('storage/models/untrained_model.h5')
         model.summary()
 
-        print('Fetching training data...')
-        train_data = self.get_samples(train_samples, verbose=True)
-        print('Fetching validation data...')
-        validation_data = self.get_samples(validation_samples, verbose=True)
+        if not init_only:
+            print('Fetching training data...')
+            train_data = self.get_samples(train_samples, verbose=True)
+            print('Fetching validation data...')
+            validation_data = self.get_samples(validation_samples, verbose=True)
 
-        log_dir = "training_logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            log_dir = "training_logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+            tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
-        model.fit(train_data, epochs=10, verbose=1, validation_data=validation_data, callbacks=[tensorboard_callback])
+            model.fit(train_data, epochs=10, verbose=1, validation_data=validation_data, callbacks=[tensorboard_callback])
 
-        model.save(save_to)
+            model.save(save_to)
 
     def get_samples(self, num=1000, verbose=False, round_to=3):
 
@@ -226,7 +228,7 @@ class RulesetLearner:
 
         ruleset = np.reshape(np.asarray(ruleset), (self.game_class.RULE_SPEC.num_dimensions, ))
 
-        if self.packed_count == 2:
+        if self.packed_count == 25:
             print('Triggered new training.')
             data = tf.data.Dataset.from_tensor_slices((self.packed_samples, self.packed_labels))
             self.packed_count = 0
