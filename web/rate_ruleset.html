@@ -7,26 +7,44 @@
         }
 
         form {
-          padding: 17px;
+          padding: 5vh;
+          display: inline-block;
+          text-align: left;
+        }
+
+        input[type="submit"] {
+          margin-top: 1.5vh;
+          text-align: center;
         }
     </style>
 </head>
 <body>
     <h1>Biota or nada?</h1>
     <p>Does this gif look more like structured life or a staticky TV?</p>
-    <img src="/img/#.gif"/>
+    <table style="width:100;">
+        <tbody>
+            <tr>
+                <td>
+                    
+                </td>
+                <td>
+                    <img src="/img/###.gif"/>
+                </td>
+            </tr>
+        </tbody>
+    </table>
     <br/>
     <form action="/submit">
-        <input type="hidden" name="id" value="#"/>
-        <input type="radio" name="rating" value="1"/> 0% alive
+        <input type="hidden" name="id" value="###"/>
+        <input type="radio" name="rating" value="1"/> 0% interesting (aka 100% LAME)
         <br/>
-        <input type="radio" name="rating" value="2"/> 25% alive
+        <input type="radio" name="rating" value="2"/> 25% interesting
         <br/>
-        <input type="radio" name="rating" value="3"/> 50% alive
+        <input type="radio" name="rating" value="3"/> 50% interesting
         <br/>
-        <input type="radio" name="rating" value="4"/> 75% alive
+        <input type="radio" name="rating" value="4"/> 75% interesting
         <br/>
-        <input type="radio" name="rating" value="5"/> 100% alive
+        <input type="radio" name="rating" value="5"/> 100% interesting &#x1F3C4; &#x1F3B8;
         <br/>
         <input type="submit" value="Submit"/>
     </form>

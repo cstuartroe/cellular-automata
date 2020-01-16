@@ -3,11 +3,11 @@ app = Flask(__name__)
 import random
 import string
 import ruleset_learning as RL
-from games import Conway, ProbabilisticConway
+from games import RedVsBlue
 from metrics.game_metrics import *
 import os
 import pickle
-from graphics import ConwayGraphics
+from graphics import RedVsBlueGraphics
 import numpy as np
 
 
@@ -19,8 +19,7 @@ def random_string(stringLength=5):
 if os.path.isfile('storage/pickles/web_learner.p'):
     r = pickle.load(open("storage/pickles/web_learner.p", "rb"))
 else:
-    r = RL.RulesetLearner(ProbabilisticConway, sparse_change, game_args=[],
-                      game_kwargs={'width': 100, 'height': 100}, num_frames=20, num_trials=5)
+    r = RL.RulesetLearner(RedVsBlue, sparse_change, game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
 
 class StoreID():
     def __init__(self, id):
@@ -28,7 +27,6 @@ class StoreID():
 
 @app.route('/')
 def rate_ruleset():
-
     id = random_string()
     file_name = f'storage/images/{id}.gif'
     new_test = r.training_sample(epsilon=-2)
@@ -36,14 +34,14 @@ def rate_ruleset():
     with open(f'storage/rulesets/{id}.txt', 'w') as file:
         file.write(str(list(new_test)))
 
-    rule_args, rule_kwargs = ProbabilisticConway.rulevector2args(new_test)
+    rule_args, rule_kwargs = RedVsBlue.rulevector2args(new_test)
 
-    conway = ProbabilisticConway(**rule_kwargs, width=50, height=50, init_alive_prob=0.25)
-    con_graphs = ConwayGraphics(conway, as_gif=True, gif_name=file_name)
+    conway = RedVsBlue(**rule_kwargs, width=50, height=50, init_alive_prob=0.25)
+    con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
     con_graphs.run(50)
 
     with open("web/rate_ruleset.html", "r") as fh:
-        return fh.read().replace('#', id)
+        return fh.read().replace('###', id)
 
 
 @app.route('/submit')
