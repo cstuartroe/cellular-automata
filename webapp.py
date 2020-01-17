@@ -49,6 +49,10 @@ def rate_ruleset():
 
     with open('storage/epsilon.txt', 'r') as file:
         epsilon = eval(file.read())
+
+        if epsilon > 0.85:
+            epsilon = 0.85
+
         INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
 
     sess_id = random_string()
