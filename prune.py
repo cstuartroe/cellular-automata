@@ -21,8 +21,7 @@ if __name__ == '__main__':
 
     data = []
     offenders = []
-
-    print('Executing!!!!')
+    ok = []
 
     for path in file_names:
         with open(path, 'r') as file:
@@ -33,6 +32,7 @@ if __name__ == '__main__':
             try:
                 result = eval(file.readline())
                 data.append((ruleset, result))
+                ok.append(path.split('_')[1].split('.')[0])
             except SyntaxError:
                 os.remove(path)
                 try:
@@ -53,6 +53,27 @@ if __name__ == '__main__':
             os.remove(img)
         except Exception as e:
             ERROR_LOGGER.exception(f'Could not remove {img}')
+
+    images = glob.glob('storage/images/*.txt')
+    games = glob.glob('storage/games/*.txt')
+
+    for path in images:
+        try:
+            id = path.split('_')[1].split('.')[0]
+            if id not in ok:
+                img = f'storage/images/{GAME_NAME}_{id}.gif'
+                os.remove(img)
+        except Exception as e:
+            ERROR_LOGGER.exception(f'Could not remove file.')
+
+    for path in games:
+        try:
+            id = path.split('_')[1].split('.')[0]
+            if id not in ok:
+                gme = f'storage/images/{GAME_NAME}_{id}.gif'
+                os.remove(gme)
+        except Exception as e:
+            ERROR_LOGGER.exception(f'Could not remove file.')
 
     if args.function == 'pt':
         print('TRAINING')
