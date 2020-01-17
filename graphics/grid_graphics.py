@@ -1,6 +1,7 @@
 import tkinter as tk
 import imageio
 from PIL import Image, ImageDraw
+import numpy as np
 
 import time
 from random import randrange
@@ -74,9 +75,8 @@ class GridGraphics:
         if self.as_gif:
             with imageio.get_writer(self.gif_name, mode='I') as writer:
                 for im in self.images:
-                    im.save("storage/test.png")
                     for i in range(GridGraphics.GIF_REPEAT_FRAMES):
-                        writer.append_data(imageio.imread("storage/test.png"))
+                        writer.append_data(np.array(im))
 
 
 class ConwayGraphics(GridGraphics):
