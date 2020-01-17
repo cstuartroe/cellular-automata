@@ -29,7 +29,7 @@ if __name__ == '__main__':
             try:
                 ruleset = np.asarray(eval(file.readline()))
             except SyntaxError:
-                os.remove(path)
+                pass
             try:
                 result = eval(file.readline())
                 data.append((ruleset, result))
