@@ -57,7 +57,7 @@ def rate_ruleset():
     INFO_LOGGER.info(f'Starting generation sequence for {sess_id}.')
     model_load_from = f'storage/models/{GAME_NAME}_model.h5'
 
-    new_test = r.training_sample(epsilon=epsilon, load_from=model_load_from)
+    new_test, s, mngf, mxgf = r.training_sample(epsilon=epsilon, load_from=model_load_from)
 
     INFO_LOGGER.info(f'Finished generation sequence for {sess_id}')
 
@@ -80,8 +80,14 @@ def rate_ruleset():
     with open(f'storage/games/{GAME_NAME}_{sess_id}.p', 'wb') as file:
         pickle.dump(conway, file)
 
+    if s > 0:
+        ai_message = f'This image was generated with artificial intelligence, using {s} gradient steps.'
+    else:
+        ai_message = 'This is a randomly generated image, out of an infinite number of possibilities.'
+
     with open("web/rate_ruleset.html", "r") as fh:
-        return fh.read().replace('###', sess_id)
+        return (fh.read().replace('###', sess_id)).replace('##MLS##', ai_message)\
+            .replace('##MXG##', str(mxgf)).replace('##MNG##', str(mngf))
 
 
 @app.route('/submit')

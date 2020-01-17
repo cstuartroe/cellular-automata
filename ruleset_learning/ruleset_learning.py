@@ -8,6 +8,7 @@ import datetime
 import time
 import os
 import logging
+import sys
 
 INFO_LOGGER = logging.getLogger('info_logger')
 ERROR_LOGGER = logging.getLogger('error_logger')
@@ -70,21 +71,32 @@ class RulesetLearner:
         new_test = self.game_class.RULE_SPEC.generate()
 
         cut_off = random.uniform(0, 1)
+        grad_steps = 0
+        min_grad_factor = sys.float_info.max
+        max_grad_factor = 0
 
         while cut_off < epsilon:
+            grad_steps += 1
             gs = abs(epsilon - cut_off)
+
+            if grad_step_scalar*gs < min_grad_factor:
+                min_grad_factor = grad_step_scalar*gs
+
+            if grad_step_scalar*gs > max_grad_factor:
+                max_grad_factor = grad_step_scalar*gs
+
             INFO_LOGGER.info('Fetching gradient descent step...')
             new_test, og_loss, new_loss = self.deep_suggestion(ruleset=new_test, new_training=False,
                                                                grad_step_scalar=(grad_step_scalar * gs),
                                                                load_from=load_from)
             cut_off += cut_off_increment
 
-        return new_test
+        return new_test, grad_steps, min_grad_factor, max_grad_factor
 
     def deep_explore_iteration(self, epsilon, grad_step_scalar=10,
                                num_best=20, cut_off_increment=0.05, save_to='trained_model.h5'):
 
-        new_test = self.training_sample(epsilon=epsilon, grad_step_scalar=grad_step_scalar, load_from=save_to,
+        new_test, s, mngf, mxgf = self.training_sample(epsilon=epsilon, grad_step_scalar=grad_step_scalar, load_from=save_to,
                                         cut_off_increment=cut_off_increment)
 
         result = self.monte_ruleset(new_test)
