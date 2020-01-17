@@ -146,5 +146,11 @@ def get_gif(gif_id):
     return send_file(file_name, mimetype='image/gif')
 
 
+@app.route('/web/thankyou.jpg')
+def get_thankyou():
+    file = 'web/thankyou.jpg'
+    return send_file(file, mimetype='image/gif')
+
+
 if __name__ == '__main__':
     app.run()
