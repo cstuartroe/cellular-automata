@@ -35,7 +35,10 @@ if __name__ == '__main__':
                 data.append((ruleset, result))
             except SyntaxError:
                 os.remove(path)
-                offenders.append(path.split('_')[1].split('.')[0])
+                try:
+                    offenders.append(path.split('_')[1].split('.')[0])
+                except IndexError:
+                    pass
 
     for bad in offenders:
         gme = f'storage/games/{GAME_NAME}_{bad}.p'
