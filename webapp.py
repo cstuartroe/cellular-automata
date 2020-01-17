@@ -57,7 +57,7 @@ def rate_ruleset():
     INFO_LOGGER.info(f'Starting generation sequence for {sess_id}.')
     model_load_from = f'storage/models/{GAME_NAME}_model.h5'
 
-    new_test, s, mngf, mxgf = r.training_sample(epsilon=epsilon, load_from=model_load_from)
+    new_test, s, mngf, mxgf = r.training_sample(epsilon=epsilon, load_from=model_load_from, grad_step_scalar=100)
 
     INFO_LOGGER.info(f'Finished generation sequence for {sess_id}')
 
@@ -132,7 +132,8 @@ def submit():
 
     INFO_LOGGER.info(f'Finished submission sequence for {sess_id}')
 
-    return 'Thank you! <a href="/">Do another?</a>'
+    with open("web/thank_you.html", "r") as fh:
+        return fh.read()
 
 
 @app.route('/img/<gif_id>.gif')
