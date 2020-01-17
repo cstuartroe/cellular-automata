@@ -26,7 +26,10 @@ if __name__ == '__main__':
 
     for path in file_names:
         with open(path, 'r') as file:
-            ruleset = np.asarray(eval(file.readline()))
+            try:
+                ruleset = np.asarray(eval(file.readline()))
+            except SyntaxError:
+                os.remove(path)
             try:
                 result = eval(file.readline())
                 data.append((ruleset, result))
