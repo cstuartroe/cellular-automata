@@ -21,11 +21,11 @@ class RulesetLearner:
         self.num_frames = num_frames
         self.num_trials = num_trials
         self.num_layers = 6
-        self.packed_samples = np.zeros((100, self.game_class.RULE_SPEC.num_dimensions))
-        self.packed_labels = np.zeros((100, 1))
+        self.train_thresh = 10
+        self.packed_samples = np.zeros((self.train_thresh, self.game_class.RULE_SPEC.num_dimensions))
+        self.packed_labels = np.zeros((self.train_thresh, 1))
         self.packed_count = 0
         self.best = []
-        self.first_train = True
 
 
     def monte_ruleset(self, rulevector):
@@ -234,15 +234,9 @@ class RulesetLearner:
 
         ruleset = np.reshape(np.asarray(ruleset), (self.game_class.RULE_SPEC.num_dimensions, ))
 
-        if self.first_train:
-            train_thresh = 5
-            self.first_train = False
-        else:
-            train_thresh = 25
+        INFO_LOGGER.info(f'The current training threshold is {self.train_thresh} and there are {self.packed_count} stored samples.')
 
-        INFO_LOGGER.info(f'The current training threshold is {train_thresh} and there are {self.packed_count} stored samples.')
-
-        if self.packed_count == train_thresh:
+        if self.packed_count == self.train_thresh:
             INFO_LOGGER.info('Triggered new training sequence...')
             data = tf.data.Dataset.from_tensor_slices((self.packed_samples, self.packed_labels))
             self.packed_count = 0

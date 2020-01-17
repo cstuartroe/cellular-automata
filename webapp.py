@@ -12,6 +12,7 @@ import numpy as np
 import logging
 from logging import INFO, ERROR
 
+
 GAME_NAME = 'RedVsBlue'
 EPSILON_START = 0.025
 EPSILON_STEP = 0.005
@@ -116,6 +117,7 @@ def submit():
     INFO_LOGGER.info('Starting continue training sequence...')
     model_load_from = f'storage/models/{GAME_NAME}_model.h5'
     INFO_LOGGER.info(f'If necessary, the model will be loaded from {model_load_from}')
+
     r.continue_training(ruleset=rule_array, value=dec_rating, load_from=model_load_from)
     INFO_LOGGER.info('Finished continued training sequence.')
 
