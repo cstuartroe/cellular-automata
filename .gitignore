@@ -9,3 +9,4 @@ training_logs/
 *.p
 storage/
 *.ini
+settings_secret.py

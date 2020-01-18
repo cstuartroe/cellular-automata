@@ -11,6 +11,7 @@ from graphics import RedVsBlueGraphics
 import numpy as np
 import logging
 from logging import INFO, ERROR
+from web.mongo_utils import Mongo_Utility
 
 
 GAME_NAME = 'RedVsBlue'
@@ -21,39 +22,48 @@ ERROR_LOGGER = logging.getLogger('error_logger')
 ERROR_LOGGER.isEnabledFor(ERROR)
 FRAMES = 50
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
-                    level=INFO, filename='storage/logs/cellauto.log', filemode='w')
 
-
-def random_string(stringLength=5):
+def random_string(stringLength=8):
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
 
 
-if os.path.isfile(f'storage/pickles/{GAME_NAME}_learner.p'):
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                    level=INFO, filename='storage/logs/cellauto.log', filemode='w')
+
+if os.path.isfile(f'storage/static/{GAME_NAME}_learner.p'):
     try:
-        r = pickle.load(open(f"storage/pickles/{GAME_NAME}_learner.p", "rb"))
+        r = pickle.load(open(f"storage/static/{GAME_NAME}_learner.p", "rb"))
         INFO_LOGGER.info(f'Successfully loaded {GAME_NAME}_learner pickle.')
     except Exception as e:
         ERROR_LOGGER.exception(f'Could not load {GAME_NAME}_learner pickle.')
 
+    try:
+        with open('storage/static/epsilon_id.txt', 'r') as file:
+            ep_id = file.readline()
+        mu = Mongo_Utility(ep_id)
+    except FileNotFoundError:
+        ERROR_LOGGER.exception('Could not load epsilon id file.')
+
 else:
     r = RL.RulesetLearner(RedVsBlue, sparse_change, game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
+    mu = Mongo_Utility()
     r.train_suggestion_model(init_only=True)
-    with open('storage/epsilon.txt', 'w+') as file:
-        file.write(str(EPSILON_START))
-    INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {EPSILON_START}.')
+    mu.initialize_epsilon(EPSILON_START)
+    with open('storage/static/epsilon_id.txt', 'w+') as file:
+        file.write(str(mu.ep_id))
+    INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {mu.get_epsilon()}.')
+
 
 @app.route('/')
 def rate_ruleset():
 
-    with open('storage/epsilon.txt', 'r') as file:
-        epsilon = eval(file.read())
+    epsilon = mu.get_epsilon()
 
-        if epsilon > 0.85:
-            epsilon = 0.85
+    if epsilon > 0.85:
+        epsilon = 0.85
 
-        INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
+    INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
 
     sess_id = random_string()
     file_name = f'storage/images/{GAME_NAME}_{sess_id}.gif'
@@ -67,8 +77,7 @@ def rate_ruleset():
 
     epsilon += EPSILON_STEP
 
-    with open('storage/epsilon.txt', 'w') as file:
-        file.write(str(epsilon))
+    mu.set_epsilon(epsilon)
 
     with open(f'storage/rulesets/{GAME_NAME}_{sess_id}.txt', 'w') as file:
         file.write(str(list(new_test)))
@@ -131,7 +140,7 @@ def submit():
     r.continue_training(ruleset=rule_array, value=dec_rating, load_from=model_load_from)
     INFO_LOGGER.info('Finished continued training sequence.')
 
-    with open(f'storage/pickles/{GAME_NAME}_learner.p', 'wb') as file:
+    with open(f'storage/static/{GAME_NAME}_learner.p', 'wb') as file:
         pickle.dump(r, file)
 
     INFO_LOGGER.info(f'Finished submission sequence for {sess_id}')
@@ -150,6 +159,11 @@ def get_gif(gif_id):
 def get_thankyou():
     file = 'web/thankyou.jpg'
     return send_file(file, mimetype='image/gif')
+
+@app.route('/setep')
+def set_ep():
+    ep = request.args['epsilon']
+    mu.set_epsilon(ep)
 
 
 if __name__ == '__main__':

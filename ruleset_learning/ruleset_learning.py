@@ -22,7 +22,7 @@ class RulesetLearner:
         self.num_frames = num_frames
         self.num_trials = num_trials
         self.num_layers = 6
-        self.train_thresh = 10
+        self.train_thresh = 50
         self.packed_samples = np.zeros((self.train_thresh, self.game_class.RULE_SPEC.num_dimensions))
         self.packed_labels = np.zeros((self.train_thresh, 1))
         self.packed_count = 0
