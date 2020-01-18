@@ -25,7 +25,7 @@ class RatePage extends Component {
     }
 
     generate_new_id() {
-      fetch(generate_url + "?game_name=" + this.props.game_id)
+      fetch(generate_url + "?game_name=" + this.props.game_name)
         .then(response => response.json())
         .then(data => {
           this.setState(data);
