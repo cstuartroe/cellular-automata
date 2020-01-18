@@ -22,6 +22,32 @@ ERROR_LOGGER = logging.getLogger('error_logger')
 ERROR_LOGGER.isEnabledFor(ERROR)
 FRAMES = 50
 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
+                    level=INFO, filename='storage/logs/cellauto.log', filemode='w')
+
+if os.path.isfile(f'storage/static/{GAME_NAME}_learner.p'):
+    try:
+        r = pickle.load(open(f"storage/static/{GAME_NAME}_learner.p", "rb"))
+        INFO_LOGGER.info(f'Successfully loaded {GAME_NAME}_learner pickle.')
+    except Exception as e:
+        ERROR_LOGGER.exception(f'Could not load {GAME_NAME}_learner pickle.')
+
+    try:
+        with open('storage/static/epsilon_id.txt', 'r') as file:
+            ep_id = file.readline()
+        mu = Mongo_Utility(ep_id)
+    except FileNotFoundError:
+        ERROR_LOGGER.exception('Could not load epsilon id file.')
+
+else:
+    r = RL.RulesetLearner(RedVsBlue, sparse_change, game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
+    mu = Mongo_Utility()
+    r.train_suggestion_model(init_only=True)
+    mu.initialize_epsilon(EPSILON_START)
+    with open('storage/static/epsilon_id.txt', 'w+') as file:
+        file.write(str(mu.ep_id))
+    INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {mu.get_epsilon()}.')
+
 
 @app.route('/img/<gif_id>.gif')
 def get_gif(gif_id):
@@ -31,7 +57,11 @@ def get_gif(gif_id):
 
 @app.route('/static/img/<filename>')
 def get_img(filename):
-    filepath = f'web/static/img/{filename}'
+    try:
+        filepath = f'web/static/img/{filename}'
+    except FileNotFoundError:
+        return 'File Not Found'
+
     return send_file(filepath, mimetype='image/gif')
 
 
@@ -51,76 +81,60 @@ def react_page(path):
     return send_file("web/index.html")
 
 
-# def random_string(stringLength=8):
-#     letters = string.ascii_lowercase
-#     return ''.join(random.choice(letters) for i in range(stringLength))
-#
-#
-# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
-#                     level=INFO, filename='storage/logs/cellauto.log', filemode='w')
-#
-# if os.path.isfile(f'storage/static/{GAME_NAME}_learner.p'):
-#     try:
-#         r = pickle.load(open(f"storage/static/{GAME_NAME}_learner.p", "rb"))
-#         INFO_LOGGER.info(f'Successfully loaded {GAME_NAME}_learner pickle.')
-#     except Exception as e:
-#         ERROR_LOGGER.exception(f'Could not load {GAME_NAME}_learner pickle.')
-#
-#     try:
-#         with open('storage/static/epsilon_id.txt', 'r') as file:
-#             ep_id = file.readline()
-#         mu = Mongo_Utility(ep_id)
-#     except FileNotFoundError:
-#         ERROR_LOGGER.exception('Could not load epsilon id file.')
-#
-# else:
-#     r = RL.RulesetLearner(RedVsBlue, sparse_change, game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
-#     mu = Mongo_Utility()
-#     r.train_suggestion_model(init_only=True)
-#     mu.initialize_epsilon(EPSILON_START)
-#     with open('storage/static/epsilon_id.txt', 'w+') as file:
-#         file.write(str(mu.ep_id))
-#     INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {mu.get_epsilon()}.')
+@app.route('/api/generate_game')
+def generate():
+
+    epsilon = mu.get_epsilon()
+
+    if epsilon > 0.85:
+        epsilon = 0.85
+
+    INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
+
+    sess_id = random_string()
+    file_name = f'storage/images/{GAME_NAME}_{sess_id}.gif'
+
+    INFO_LOGGER.info(f'Starting generation sequence for {sess_id}.')
+    model_load_from = f'storage/models/{GAME_NAME}_model.h5'
+
+    new_test, s, mngf, mxgf = r.training_sample(epsilon=epsilon, load_from=model_load_from, grad_step_scalar=100)
+
+    INFO_LOGGER.info(f'Finished generation sequence for {sess_id}')
+
+    epsilon += EPSILON_STEP
+
+    mu.set_epsilon(epsilon)
+
+    with open(f'storage/rulesets/{GAME_NAME}_{sess_id}.txt', 'w') as file:
+        file.write(str(list(new_test)))
+
+    rule_args, rule_kwargs = RedVsBlue.rulevector2args(new_test)
+
+    conway = RedVsBlue(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
+
+    con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
+    con_graphs.run(FRAMES)
+    INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
+
+    with open(f'storage/games/{GAME_NAME}_{sess_id}.p', 'wb') as file:
+        pickle.dump(conway, file)
+
+    return {'game_id': sess_id}
+
+
+def random_string(stringLength=8):
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
+
+
+
+
 #
 #
 # @app.route('/')
 # def rate_ruleset():
 #
-#     epsilon = mu.get_epsilon()
-#
-#     if epsilon > 0.85:
-#         epsilon = 0.85
-#
-#     INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
-#
-#     sess_id = random_string()
-#     file_name = f'storage/images/{GAME_NAME}_{sess_id}.gif'
-#
-#     INFO_LOGGER.info(f'Starting generation sequence for {sess_id}.')
-#     model_load_from = f'storage/models/{GAME_NAME}_model.h5'
-#
-#     new_test, s, mngf, mxgf = r.training_sample(epsilon=epsilon, load_from=model_load_from, grad_step_scalar=100)
-#
-#     INFO_LOGGER.info(f'Finished generation sequence for {sess_id}')
-#
-#     epsilon += EPSILON_STEP
-#
-#     mu.set_epsilon(epsilon)
-#
-#     with open(f'storage/rulesets/{GAME_NAME}_{sess_id}.txt', 'w') as file:
-#         file.write(str(list(new_test)))
-#
-#     rule_args, rule_kwargs = RedVsBlue.rulevector2args(new_test)
-#
-#     conway = RedVsBlue(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
-#
-#     con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
-#     con_graphs.run(FRAMES)
-#     INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
-#
-#     with open(f'storage/games/{GAME_NAME}_{sess_id}.p', 'wb') as file:
-#         pickle.dump(conway, file)
-#
+
 #     if s > 0:
 #         ai_message = f'This image was generated with artificial intelligence, using {s} gradient steps.'
 #     else:

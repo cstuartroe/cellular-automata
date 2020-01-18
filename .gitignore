@@ -11,3 +11,4 @@ storage/
 *.ini
 node_modules
 settings_secret.py
+.vscode/

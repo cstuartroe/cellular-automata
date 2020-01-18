@@ -4,30 +4,43 @@ import ReactDOM from "react-dom";
 
 import "../static/scss/main.scss";
 
-class App extends Component {
-  state = {
-  };
+const generate_url = '/api/generate_game'
+const base_img_url = '/img/'
 
-  render() {
-    return (
-      <Router>
-          <Switch>
-            <Route exact={true} path="/thank_you" render={() => (
-              <div className="main">
-                <h1>Thank you!</h1>
-                <a id="another" href="/">Do another?</a>
-                <br/>
-                <br/>
-                <img src="/static/img/thankyou.jpg" alt="Thanks" height="500" width="700"/>
-              </div>
-            )} />
+class MainPage extends Component {
 
-            <Route exact={true} path="/" render={() => (
-              <div>
+    constructor(props) {
+      super(props);
+
+      this.state = {
+        game_name: props.game_name,
+        game_id: '',
+      };
+    }
+
+    componentDidMount(){
+      this.generate_new_id();
+    }
+
+    generate_new_id() {
+      fetch(generate_url)
+        .then(response => response.json())
+        .then(data => {
+          this.setState({'game_id':data.game_id});
+          console.log(this.state.game_id);
+        });
+    }
+
+    render() {
+
+      var gif = base_img_url.concat(this.state.game_name, '_', this.state.game_id, '.gif')
+
+      return(
+        <div>
                 <p>You've heard of Hot or Not, now get ready for...</p>
                 <h1>Biota or Nada?</h1>
                 <h2>Does this gif look more like structured life or a staticky TV?</h2>
-                <img src="/img/###.gif"/>
+                <img src={gif}/>
                 <p>##MLS##</p>
 
                 <form action="/submit" id="rate">
@@ -49,7 +62,37 @@ class App extends Component {
                 <br/>
                 <p>Created by Conor Stuart-Roe and Kristian Gaylord</p>
                 <p id="grad_scale">The maximum gradient scalar was ##MXG##, and the minimum ##MNG##</p>
-              </div>
+        </div>
+      )
+
+    }
+}
+
+class ThankYouPage extends Component{
+  render(){
+    return(
+      <div className="main">
+                <h1>Thank you!</h1>
+                <a id="another" href="/">Do another?</a>
+                <br/>
+                <br/>
+                <img src="/static/img/thankyou.jpg" alt="Thanks" height="500" width="700"/>
+        </div>
+    )
+  }
+}
+
+class App extends Component {
+  render() {
+    return (
+      <Router>
+          <Switch>
+            <Route exact={true} path="/thank_you" render={() => (
+              <ThankYouPage></ThankYouPage>
+            )} />
+
+            <Route exact={true} path="/" render={() => (
+              <MainPage game_name='RedVsBlue'></MainPage>
             )} />
 
             <Route exact={false} path="" render={() => (
