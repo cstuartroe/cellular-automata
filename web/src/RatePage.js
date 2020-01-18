@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Redirect } from "react-router-dom";
 import ReactDOM from "react-dom";
+const qs = require('querystring');
 
 const generate_url = '/api/generate_game';
 const base_img_url = '/img/';
@@ -35,7 +36,12 @@ class RatePage extends Component {
     submit() {
       if (this.state.rating != -1 && this.state.game_id != '') {
         fetch(submit_url, {
-          method: "POST"
+          method: "POST",
+          body: qs.stringify({
+            game_name: this.props.game_name,
+            game_id: this.state.game_id,
+            rating: this.state.rating
+          })
         }).then(response => {
             if (response.status == 200) {
               this.setState({submitted: true});

@@ -172,14 +172,15 @@ class RhomdoRender(NodePath):
 
 
 class RhomdosRender:
-    def __init__(self, game, duration=None, storage_path="storage/3d/frame", fps=30, as_gif=False, gif_name=None):
+    def __init__(self, game, duration=None, storage_path="storage/3d/frame", fps=30, as_gif=False, gif_name=None, size=(480, 480)):
         self.game = game
         self.duration = duration
         self.storage_path = storage_path
         self.fps = fps
         self.as_gif = as_gif
         self.gif_name = gif_name
-        self.base = ShowBase(windowType=('offscreen' if as_gif else None))
+        self.base = ShowBase(windowType='none')
+        self.base.openWindow(type=('offscreen' if as_gif else 'onscreen'), size=size)
 
         depth, height, width = game.shape
         self.rhomdos = []
@@ -237,7 +238,7 @@ class RhomdosRender:
 
     def generate_gif(self):
         with imageio.get_writer(self.gif_name, mode='I') as writer:
-            for i in tqdm(list(range(1, self.duration*self.fps))):
+            for i in tqdm(list(range(3, self.duration*self.fps))):
                 filename = f"{self.storage_path}_{str(i).rjust(4, '0')}.png"
                 writer.append_data(imageio.imread(filename))
                 os.remove(filename)

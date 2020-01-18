@@ -20,17 +20,12 @@ class App extends Component {
   render() {
     return (
       <Router>
-        <div style={{position: "fixed", right: 0, bottom: 0, backgroundColor: "white"}}>
-          <a href={git_link}>
-            <FontAwesomeIcon icon={faGithub} style={{margin: "1vw", fontSize: "6vw", color: "black"}} />
-          </a>
-        </div>
-
-        <p>You've heard of Hot or Not, now get ready for...</p>
-        <Link to="/"><h1>Biota or Nada?</h1></Link>
-
         <div className="container header">
           <div className="row">
+            <div className="col-12">
+                <p>You've heard of Hot or Not, now get ready for...</p>
+                <Link to="/"><h1>Biota or Nada?</h1></Link>
+            </div>
             {games.map((game, index) => (
               <div className="col-4" key={index}>
                 <Link to={"/" + game}><h3>{game}</h3></Link>
@@ -39,30 +34,42 @@ class App extends Component {
           </div>
         </div>
 
-        <Switch>
-          <Route exact={true} path="/" render={() => (
-            <MainPage/>
-          )} />
+        <div style={{paddingBottom: "20vh"}}>
+          <Switch>
+            <Route exact={true} path="/" render={() => (
+              <MainPage/>
+            )} />
 
-          <Route exact={true} path="/:game_name/rate" render={({match}) => (
-            <RatePage game_name={match.params.game_name}/>
-          )} />
+            <Route exact={true} path="/:game_name/rate" render={({match}) => (
+              <RatePage game_name={match.params.game_name}/>
+            )} />
 
-          <Route exact={true} path="/:game_name/thanks" render={({match}) => (
-            <ThankYouPage game_name={match.params.game_name}/>
-          )} />
+            <Route exact={true} path="/:game_name/thanks" render={({match}) => (
+              <ThankYouPage game_name={match.params.game_name}/>
+            )} />
 
-          <Route exact={true} path="/:game_name" render={({match}) => (
-            <AboutPage game_name={match.params.game_name}/>
-          )} />
+            <Route exact={true} path="/:game_name" render={({match}) => (
+              <AboutPage game_name={match.params.game_name}/>
+            )} />
 
-          <Route exact={false} path="" render={() => (
-            <p>Unknown page.</p>
-          )} />
-        </Switch>
+            <Route exact={false} path="" render={() => (
+              <p>Unknown page.</p>
+            )} />
+          </Switch>
+        </div>
 
-        <hr/>
-        <p>Created by Conor Stuart-Roe and Kristian Gaylord</p>
+        <div style={{
+          width: "100%",
+          position: "fixed",
+          bottom: 0,
+          backgroundColor: "white",
+          borderTop: "1px solid #aaaaaa"
+        }}>
+          <p style={{margin: 0, paddingTop: ".5vh"}}>Created by Conor Stuart-Roe and Kristian Gaylord</p>
+          <a href={git_link}>
+            <FontAwesomeIcon icon={faGithub} style={{margin: ".5vh", fontSize: "3vh", color: "black"}} />
+          </a>
+        </div>
       </Router>
     );
   }
