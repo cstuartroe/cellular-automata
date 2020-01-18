@@ -30,7 +30,7 @@ class Mongo_Utility:
         self.ep_col.update_one({'_id': ObjectId(self.ep_id)}, new_value)
 
     def build_sample_doc(self, ruleset, value):
-
+        pass
 
     @staticmethod
     def remove_all_documents(collection):
