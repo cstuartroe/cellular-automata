@@ -28,7 +28,6 @@ class RulesetLearner:
         self.packed_count = 0
         self.best = []
 
-
     def monte_ruleset(self, rulevector):
         ruleargs, rulekwargs = self.game_class.rulevector2args(rulevector)
         outputs = []
@@ -179,8 +178,7 @@ class RulesetLearner:
             return faults
 
     def ruleset_to_tensor(self, ruleset):
-
-        num_dim= self.game_class.RULE_SPEC.num_dimensions
+        num_dim = self.game_class.RULE_SPEC.num_dimensions
         rst = tf.convert_to_tensor(ruleset)
         rst = tf.reshape(rst, (1, num_dim))
 
@@ -221,7 +219,6 @@ class RulesetLearner:
             model.save(save_to)
 
     def get_samples(self, num=1000, verbose=False, round_to=3):
-
         samples = np.zeros((num, self.game_class.RULE_SPEC.num_dimensions))
         labels = np.zeros((num, 1))
 
@@ -242,48 +239,31 @@ class RulesetLearner:
 
         return data.map(self.shape_tensor)
 
-    def continue_training(self, ruleset, value, load_from='trained_model.h5'):
+    def continue_training(self, samples, labels, load_from='trained_model.h5'):
 
-        ruleset = np.reshape(np.asarray(ruleset), (self.game_class.RULE_SPEC.num_dimensions, ))
+        data = tf.data.Dataset.from_tensor_slices((samples, labels))
+        data = data.map(self.shape_tensor)
 
-        INFO_LOGGER.info(f'The current training threshold is {self.train_thresh} and there are {self.packed_count} stored samples.')
-
-        if self.packed_count == self.train_thresh:
-            INFO_LOGGER.info('Triggered new training sequence...')
-            data = tf.data.Dataset.from_tensor_slices((self.packed_samples, self.packed_labels))
-            self.packed_count = 0
-            data = data.map(self.shape_tensor)
-
-            INFO_LOGGER.info('Attempting to load model...')
-
-            if os.path.isfile(load_from):
-                try:
-                    model = tf.keras.models.load_model(load_from)
-                    INFO_LOGGER.info(f'Loaded model from {load_from}')
-                except Exception as e:
-                    ERROR_LOGGER.exception(f'Failed to load model from {load_from}')
-            else:
-                try:
-                    model = tf.keras.models.load_model('storage/models/untrained_model.h5')
-                    INFO_LOGGER.info(f'Loaded model from storage/models/untrained_model.h5')
-                except Exception as e:
-                    ERROR_LOGGER.exception(f'Failed to load model from storage/models/untrained_model.h5')
-
+        if os.path.isfile(load_from):
             try:
-                model.fit(data, epochs=5, verbose=1)
-                INFO_LOGGER.info('Model successfully fit!')
+                model = tf.keras.models.load_model(load_from)
+                INFO_LOGGER.info(f'Loaded model from {load_from}')
             except Exception as e:
-                ERROR_LOGGER.exception(f'Failed to fit model...')
-
-            model.save(load_from)
-
+                ERROR_LOGGER.exception(f'Failed to load model from {load_from}')
         else:
-            self.packed_samples[self.packed_count] = ruleset
-            self.packed_labels[self.packed_count] = value
+            try:
+                model = tf.keras.models.load_model('storage/models/untrained_model.h5')
+                INFO_LOGGER.info(f'Loaded model from storage/models/untrained_model.h5')
+            except Exception as e:
+                ERROR_LOGGER.exception(f'Failed to load model from storage/models/untrained_model.h5')
 
-            INFO_LOGGER.info(f'Successfully stored sample. There are now {self.packed_count+1} samples stored.')
+        try:
+            model.fit(data, epochs=10, verbose=1)
+            INFO_LOGGER.info('Model successfully fit!')
+        except Exception as e:
+            ERROR_LOGGER.exception(f'Failed to fit model...')
 
-        self.packed_count += 1
+        model.save(load_from)
 
     def shape_tensor(self, sample, label):
         sample = tf.reshape(sample, (1, self.game_class.RULE_SPEC.num_dimensions))
