@@ -58,7 +58,7 @@ def generate():
 
     r, mu = initialize_game(game_name)
 
-    epsilon = mu.get_epsilon()
+    epsilon = float(mu.get_epsilon())
 
     if epsilon > 0.85:
         epsilon = 0.85
@@ -132,6 +132,8 @@ def set_ep():
     mu = MongoUtility()
     mu.initialize_epsilon(ep)
 
+    return 'True'
+
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -144,9 +146,9 @@ def submit():
 
     INFO_LOGGER.info('The incoming string!!: ' + str(request.form))
 
-    sess_id = 'sdf' #request.json['game_id']
-    game_name = 'sdf' #request.json['game_name']
-    rating = 4 #int(request.json['rating'])
+    sess_id = request.form['game_id']
+    game_name = request.form['game_name']
+    rating = int(request.form['rating'])
 
     dec_rating = (rating - 1)/4
 
