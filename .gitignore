@@ -9,4 +9,5 @@ training_logs/
 *.p
 storage/
 *.ini
+node_modules
 settings_secret.py

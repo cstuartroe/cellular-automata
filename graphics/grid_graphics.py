@@ -1,6 +1,7 @@
 import tkinter as tk
 import imageio
 from PIL import Image, ImageDraw
+import numpy as np
 
 import time
 from random import randrange
@@ -9,14 +10,14 @@ from metrics.component import Components
 
 
 class GridGraphics:
-    GIF_CELL_WIDTH = 10
     GIF_REPEAT_FRAMES = 2
 
-    def __init__(self, game, components=False, as_gif=False, gif_name=None):
+    def __init__(self, game, components=False, as_gif=False, gif_name=None, cell_width=10):
         self.game = game
         self.components = Components(self.game) if components else None
         self.as_gif = as_gif
         self.gif_name = gif_name
+        self.cell_width = cell_width
 
         if as_gif:
             self.images = []
@@ -30,8 +31,8 @@ class GridGraphics:
     def draw(self):
         if self.as_gif:
             im = Image.new("RGB", (
-                self.game.shape[1]*GridGraphics.GIF_CELL_WIDTH,
-                self.game.shape[0]*GridGraphics.GIF_CELL_WIDTH
+                self.game.shape[1]*self.cell_width,
+                self.game.shape[0]*self.cell_width
             ))
             self.current_image_draw = ImageDraw.Draw(im)
             self.images.append(im)
@@ -47,10 +48,10 @@ class GridGraphics:
         grid_height, grid_width = self.game.shape
 
         if self.as_gif:
-            start_x = x * GridGraphics.GIF_CELL_WIDTH
-            start_y = y * GridGraphics.GIF_CELL_WIDTH
-            end_x = (x+1) * GridGraphics.GIF_CELL_WIDTH - 2
-            end_y = (y+1) * GridGraphics.GIF_CELL_WIDTH - 2
+            start_x = x * self.cell_width
+            start_y = y * self.cell_width
+            end_x = (x+1) * self.cell_width - 2
+            end_y = (y+1) * self.cell_width - 2
             self.current_image_draw.rectangle([start_x, start_y, end_x, end_y], fill=color)
         else:
             start_x = x * self.canv.winfo_width() / grid_width
@@ -74,9 +75,8 @@ class GridGraphics:
         if self.as_gif:
             with imageio.get_writer(self.gif_name, mode='I') as writer:
                 for im in self.images:
-                    im.save("storage/test.png")
                     for i in range(GridGraphics.GIF_REPEAT_FRAMES):
-                        writer.append_data(imageio.imread("storage/test.png"))
+                        writer.append_data(np.array(im))
 
 
 class ConwayGraphics(GridGraphics):
