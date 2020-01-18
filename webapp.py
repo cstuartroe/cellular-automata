@@ -46,16 +46,6 @@ def get_js(filename):
     return send_file(filepath)
 
 
-@app.route('/')
-def index():
-    return send_file("web/index.html")
-
-
-@app.route('/<anything>')
-def react_page(path):
-    return send_file("web/index.html")
-
-
 @app.route('/api/generate_game')
 def generate():
 
@@ -95,7 +85,7 @@ def generate():
     con_graphs = RedVsBlueGraphics(conway, as_gif=True, gif_name=file_name)
     con_graphs.run(FRAMES)
 
-    mu.add_game(rule_id=sess_id, game=conway)
+    # mu.add_game(rule_id=sess_id, game=conway)
 
     INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
 
@@ -139,6 +129,12 @@ def set_ep():
     ep = request.args['epsilon']
     mu = MongoUtility()
     mu.initialize_epsilon(ep)
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def index(path):
+    return send_file("web/index.html")
 
 #
 # @app.route('/submit')

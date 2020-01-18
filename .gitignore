@@ -12,3 +12,4 @@ storage/
 node_modules
 settings_secret.py
 .vscode/
+web/static/js/main.js

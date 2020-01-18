@@ -13,6 +13,7 @@ import sys
 INFO_LOGGER = logging.getLogger('info_logger')
 ERROR_LOGGER = logging.getLogger('error_logger')
 
+
 class RulesetLearner:
     def __init__(self, game_class, objective_function, game_args, game_kwargs, num_frames, num_trials):
         self.game_class = game_class
@@ -23,9 +24,6 @@ class RulesetLearner:
         self.num_trials = num_trials
         self.num_layers = 6
         self.train_thresh = 50
-        self.packed_samples = np.zeros((self.train_thresh, self.game_class.RULE_SPEC.num_dimensions))
-        self.packed_labels = np.zeros((self.train_thresh, 1))
-        self.packed_count = 0
         self.best = []
 
     def monte_ruleset(self, rulevector):

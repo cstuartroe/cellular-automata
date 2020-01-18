@@ -3,6 +3,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import numpy as np
 from ruleset_learning import RulesetLearner
+from games import ProbabilisticConway, RedVsBlue, Rhomdos
 
 class MongoUtility:
 
@@ -93,10 +94,13 @@ class MongoUtility:
 
     def dump_and_train(self, game_name):
 
+        class_mapping = {'Conway': ProbabilisticConway, 'RedVsBlue': RedVsBlue, 'Rhomdos': Rhomdos}
+        game_class = class_mapping[game_name]
+
         results = self.pre_sample_col.find({'game_name': game_name})
         num_samples = results.count()
 
-        samples = np.zeros((num_samples, game_name.RULE_SPEC.num_dimensions))
+        samples = np.zeros((num_samples, game_class.RULE_SPEC.num_dimensions))
         labels = np.zeros((num_samples, 1))
 
         model_load_from = f'storage/models/{game_name}_model.h5'
@@ -108,7 +112,7 @@ class MongoUtility:
             rating = float(document['rating'])
             doc_id = document['_id']
 
-            rule_array = np.reshape(np.asarray(ruleset), (game_name.RULE_SPEC.num_dimensions, ))
+            rule_array = np.reshape(np.asarray(ruleset), (game_class.RULE_SPEC.num_dimensions, ))
 
             samples[count] = rule_array
             labels[count] = rating
@@ -118,7 +122,13 @@ class MongoUtility:
 
             count += 1
 
-        # RulesetLearner.continue_training(samples=samples, labels=labels, load_from=model_load_from)
+        print(samples)
+        print(labels)
+
+        trainer = RulesetLearner(game_class, '', game_args=[], game_kwargs={'width': -1, 'height': -1},
+                                 num_frames=20, num_trials=5)
+
+        trainer.continue_training(samples=samples, labels=labels, load_from=model_load_from)
 
 
 
