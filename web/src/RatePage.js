@@ -34,20 +34,28 @@ class RatePage extends Component {
     }
 
     submit() {
-      if (this.state.rating != -1 && this.state.game_id != '') {
-        fetch(submit_url, {
-          method: "POST",
-          body: qs.stringify({
+      console.log('Submit click')
+      const body = JSON.stringify({
             game_name: this.props.game_name,
             game_id: this.state.game_id,
             rating: this.state.rating
-          })
+       });
+
+      if (this.state.rating != -1 && this.state.game_id != '') {
+        fetch(submit_url, {
+          method: "POST",
+          body: body,
+          headers: {
+             'Content-Type': 'application/x-www-form-urlencoded',
+          }
         }).then(response => {
             if (response.status == 200) {
               this.setState({submitted: true});
             }
           })
       }
+
+      console.log(body)
     }
 
     render() {

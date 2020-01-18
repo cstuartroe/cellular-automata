@@ -142,11 +142,11 @@ def index(path):
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
 
-    INFO_LOGGER.info(str(request.args))
+    INFO_LOGGER.info('The incoming string!!: ' + str(request.form))
 
-    sess_id = request.args['game_id']
-    game_name = request.args['game_name']
-    rating = int(request.args['rating'])
+    sess_id = 'sdf' #request.json['game_id']
+    game_name = 'sdf' #request.json['game_name']
+    rating = 4 #int(request.json['rating'])
 
     dec_rating = (rating - 1)/4
 
