@@ -9,3 +9,4 @@ training_logs/
 *.p
 storage/
 *.ini
+node_modules

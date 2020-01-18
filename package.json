@@ -1,0 +1,36 @@
+{
+  "name": "cellular-automata",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "webpack --mode development ./web/src/App.js --output ./web/static/js/main.js",
+    "build": "webpack --mode production ./web/src/App.js --output ./web/static/js/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cstuartroe/cellular-automata.git"
+  },
+  "author": "Conor Stuart Roe, Kristian Gaylord",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cstuartroe/cellular-automata/issues"
+  },
+  "homepage": "https://github.com/cstuartroe/cellular-automata#readme",
+  "devDependencies": {
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "@babel/preset-react": "^7.6.3",
+    "babel-loader": "^8.0.6",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "prop-types": "^15.7.2",
+    "react": "^16.10.2",
+    "react-dom": "^16.10.2",
+    "weak-key": "^1.0.1",
+    "webpack": "^4.41.1",
+    "webpack-cli": "^3.3.9"
+  }
+}
