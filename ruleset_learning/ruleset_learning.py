@@ -23,7 +23,6 @@ class RulesetLearner:
         self.num_frames = num_frames
         self.num_trials = num_trials
         self.num_layers = 6
-        self.train_thresh = 50
         self.best = []
 
     def monte_ruleset(self, rulevector):

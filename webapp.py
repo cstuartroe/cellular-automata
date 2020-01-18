@@ -17,7 +17,7 @@ INFO_LOGGER = logging.getLogger('info_logger')
 ERROR_LOGGER = logging.getLogger('error_logger')
 ERROR_LOGGER.isEnabledFor(ERROR)
 FRAMES = 50
-DUMP_AFTER = 50
+DUMP_AFTER = 5
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=INFO, filename='storage/logs/cellauto.log', filemode='w')
@@ -84,10 +84,20 @@ def generate():
 
     rule_args, rule_kwargs = main_game_class.rulevector2args(new_test)
 
-    conway = main_game_class(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
+    if game_name == 'RedVsBlue':
+        game_render = main_game_class(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
+        graphs = graphics_class(game_render, as_gif=True, gif_name=file_name)
+        graphs.run(FRAMES)
 
-    con_graphs = graphics_class(conway, as_gif=True, gif_name=file_name)
-    con_graphs.run(FRAMES)
+    elif game_name == 'Conway':
+        game_render = main_game_class(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
+        graphs = graphics_class(game_render, as_gif=True, gif_name=file_name)
+        graphs.run(FRAMES)
+
+    elif game_name == 'Rhomdos':
+        game_render = main_game_class(**rule_kwargs, width=12, height=12, depth=12, init_alive_prob=0.25)
+        graphs = graphics_class(game_render, duration=10, as_gif=True, gif_name=file_name)
+        graphs.run()
 
     # mu.add_game(rule_id=sess_id, game=conway)
 
@@ -150,7 +160,7 @@ def submit():
     game_name = request.form['game_name']
     rating = int(request.form['rating'])
 
-    dec_rating = (rating - 1)/4
+    dec_rating = (rating)/4
 
     INFO_LOGGER.info(f'Starting submit sequence for {sess_id} with rating {rating}')
 

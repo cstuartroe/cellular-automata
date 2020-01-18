@@ -12,7 +12,7 @@ class MongoUtility:
         client = MongoClient(MONGO_END_POINT, username=MONGO_USER, password=MONGO_PWD)
         db = client.biotaornada
         self.ep_col = db.epsilon
-        self.pre_sample_col = db.pre_training
+        self.pre_train = db.pre_training
         self.storage = db.storage
         self.ep_id = ep_id
 
@@ -48,7 +48,7 @@ class MongoUtility:
 
     def count_by_name(self, game_name, pre=True):
         if pre:
-            results = self.pre_sample_col.find({'game_name': game_name})
+            results = self.pre_train.find({'game_name': game_name})
         else:
             results = self.storage.find({'game_name': game_name})
 
@@ -65,17 +65,17 @@ class MongoUtility:
 
     def send_sample(self, json, pre=True):
         if pre:
-            self.pre_sample_col.insert_one(json)
+            self.pre_train.insert_one(json)
         else:
             self.storage.insert_one(json)
 
     def update_rating(self, game_id, rating):
         new_value = {'$set': {'rating': rating}}
-        self.pre_sample_col.update_one({'key': game_id}, new_value)
+        self.pre_train.update_one({'key': game_id}, new_value)
 
     def prune_samples(self, pre=True):
         if pre:
-            self.pre_sample_col.delete_many({'rating': -1})
+            self.pre_train.delete_many({'rating': -1})
         else:
             self.storage.delete_many({'rating': -1})
 
@@ -90,13 +90,13 @@ class MongoUtility:
         new_value = {'$set': json}
 
         if pre:
-            self.pre_sample_col.update_one({'key': rule_id}, new_value)
+            self.pre_train.update_one({'key': rule_id}, new_value)
         else:
             self.storage.update_one({'key': rule_id}, new_value)
 
     def get_sample(self, game_id, pre=False):
         if pre:
-            return self.pre_sample_col.find_one({'key': game_id})
+            return self.pre_train.find_one({'key': game_id})
         else:
             return self.storage.find_one({'key': game_id})
 
@@ -104,7 +104,9 @@ class MongoUtility:
 
         game_class = name_to_class(game_name)[0]
 
-        results = self.pre_sample_col.find({'game_name': game_name})
+        self.prune_samples()
+
+        results = self.pre_train.find({'game_name': game_name})
         num_samples = results.count()
 
         samples = np.zeros((num_samples, game_class.RULE_SPEC.num_dimensions))
@@ -123,7 +125,7 @@ class MongoUtility:
             labels[count] = rating
 
             self.storage.insert_one(document)
-            self.pre_sample_col.remove({'_id': doc_id})
+            self.pre_train.remove({'_id': doc_id})
 
             count += 1
 
