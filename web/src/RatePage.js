@@ -35,7 +35,7 @@ class RatePage extends Component {
 
     submit() {
       console.log('Submit click')
-      const body = JSON.stringify({
+      const body = qs.stringify({
             game_name: this.props.game_name,
             game_id: this.state.game_id,
             rating: this.state.rating
@@ -64,7 +64,7 @@ class RatePage extends Component {
       }
 
       var gif = base_img_url + this.props.game_name + '_' + this.state.game_id + '.gif';
-      var ai_message = this.state.grad_steps > 0 ?
+      var ai_message = this.state.grad_steps === 0 ?
                        'This is a randomly generated image, out of an infinite number of possibilities.'
                        :
                        'This image was generated with artificial intelligence, using ' + this.state.grad_steps + ' gradient steps.';

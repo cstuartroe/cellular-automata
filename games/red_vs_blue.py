@@ -1,7 +1,7 @@
 import numpy as np
 
 from .game import Dimension, Spec, Game
-from .matrix_utils import add_shifts
+from .matrix_utils import add_shifts, squashed_sigmoid
 
 
 def conway_generator(init_alive_prob):
@@ -67,7 +67,7 @@ class RedVsBlue(Game):
 
     @staticmethod
     def rulevector2args(rulevector):
-        life_rules = 1/(1 + np.exp((15 - rulevector[:18]*30)))
+        life_rules = squashed_sigmoid(rulevector[:18])
         survive = life_rules[:9]
         spawn = life_rules[9:]
         color_noise = rulevector[18]

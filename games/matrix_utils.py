@@ -26,3 +26,7 @@ def direction_combinations(*tuples):
                 new_combos.append(combo + (direction,))
         combos = new_combos
     return combos
+
+
+def squashed_sigmoid(a):
+    return 1 / (1 + np.exp((15 - a * 30)))

@@ -1,7 +1,7 @@
 import numpy as np
 
 from .game import Dimension, Spec, Game
-from .matrix_utils import add_shifts, direction_combinations
+from .matrix_utils import add_shifts, direction_combinations, squashed_sigmoid
 
 
 def conway_generator(init_alive_prob):
@@ -81,6 +81,7 @@ class ProbabilisticConway(Conway):
 
     @staticmethod
     def rulevector2args(rulevector):
-        survive = rulevector[:9]
-        spawn = rulevector[9:]
+        life_rules = squashed_sigmoid(rulevector)
+        survive = life_rules[:9]
+        spawn = life_rules[9:]
         return [], {"survive": survive, "spawn": spawn}
