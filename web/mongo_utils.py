@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 import numpy as np
 from ruleset_learning import RulesetLearner
-from games import ProbabilisticConway, RedVsBlue, Rhomdos
+from games import ProbabilisticConway, RedVsBlue, Rhomdos, name_to_class
 
 class MongoUtility:
 
@@ -46,6 +46,14 @@ class MongoUtility:
     def get_doc_count(collection):
         return collection.estimated_document_count()
 
+    def count_by_name(self, game_name, pre=True):
+        if pre:
+            results = self.pre_sample_col.find({'game_name': game_name})
+        else:
+            results = self.storage.find({'game_name': game_name})
+
+        return results.count()
+
     @staticmethod
     def sample_to_json(id, ruleset, game_name, value=-1, grad_steps=0, grad_max=0, grad_min=0, frames=50):
         st_set = str(ruleset.tolist())
@@ -61,9 +69,9 @@ class MongoUtility:
         else:
             self.storage.insert_one(json)
 
-    def update_rating(self, rule_id, rating):
+    def update_rating(self, game_id, rating):
         new_value = {'$set': {'rating': rating}}
-        self.pre_sample_col.update_one({'key': rule_id}, new_value)
+        self.pre_sample_col.update_one({'key': game_id}, new_value)
 
     def prune_samples(self, pre=True):
         if pre:
@@ -94,16 +102,13 @@ class MongoUtility:
 
     def dump_and_train(self, game_name):
 
-        class_mapping = {'Conway': ProbabilisticConway, 'RedVsBlue': RedVsBlue, 'Rhomdos': Rhomdos}
-        game_class = class_mapping[game_name]
+        game_class = name_to_class(game_name)[0]
 
         results = self.pre_sample_col.find({'game_name': game_name})
         num_samples = results.count()
 
         samples = np.zeros((num_samples, game_class.RULE_SPEC.num_dimensions))
         labels = np.zeros((num_samples, 1))
-
-        model_load_from = f'storage/models/{game_name}_model.h5'
 
         count = 0
 
@@ -128,7 +133,7 @@ class MongoUtility:
         trainer = RulesetLearner(game_class, '', game_args=[], game_kwargs={'width': -1, 'height': -1},
                                  num_frames=20, num_trials=5)
 
-        trainer.continue_training(samples=samples, labels=labels, load_from=model_load_from)
+        trainer.continue_training(game_name=game_name, samples=samples, labels=labels)
 
 
 

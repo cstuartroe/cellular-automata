@@ -182,14 +182,13 @@ class RulesetLearner:
 
         return rst
 
-    def train_suggestion_model(self, lr=0.005, train_samples=1000, validation_samples=100,
-                               save_to='trained_model.h5', init_only=False):
+    def get_ruleset_model(self, lr=0.005):
 
         dim = self.game_class.RULE_SPEC.num_dimensions
 
         model = models.Sequential()
 
-        model.add(layers.Dense(64, activation='sigmoid', input_shape=(dim, )))
+        model.add(layers.Dense(64, activation='sigmoid', input_shape=(dim,)))
         model.add(layers.Dense(32, activation='sigmoid', use_bias=True))
 
         model.add(layers.Dense(1, activation='sigmoid', use_bias=True))
@@ -201,6 +200,13 @@ class RulesetLearner:
         model.compile(optimizer=opt, loss=loss, metrics=[met])
         model.save('storage/models/untrained_model.h5')
         model.summary()
+
+        return model
+
+    def train_suggestion_model(self, lr=0.005, train_samples=1000, validation_samples=100,
+                               save_to='trained_model.h5', init_only=False):
+
+        model = self.get_ruleset_model(lr)
 
         if not init_only:
             print('Fetching training data...')
@@ -237,23 +243,23 @@ class RulesetLearner:
 
         return data.map(self.shape_tensor)
 
-    def continue_training(self, samples, labels, load_from='trained_model.h5'):
+    def continue_training(self, game_name, samples, labels):
 
         data = tf.data.Dataset.from_tensor_slices((samples, labels))
         data = data.map(self.shape_tensor)
 
-        if os.path.isfile(load_from):
-            try:
-                model = tf.keras.models.load_model(load_from)
-                INFO_LOGGER.info(f'Loaded model from {load_from}')
-            except Exception as e:
-                ERROR_LOGGER.exception(f'Failed to load model from {load_from}')
+        desired_path = f'storage/models/{game_name}_model.h5'
+
+        if os.path.isfile(desired_path):
+            model_path = desired_path
         else:
-            try:
-                model = tf.keras.models.load_model('storage/models/untrained_model.h5')
-                INFO_LOGGER.info(f'Loaded model from storage/models/untrained_model.h5')
-            except Exception as e:
-                ERROR_LOGGER.exception(f'Failed to load model from storage/models/untrained_model.h5')
+            model_path = f'storage/models/untrained_model.h5'
+
+        try:
+            model = tf.keras.models.load_model(model_path)
+            INFO_LOGGER.info(f'Loaded model from {model_path}')
+        except Exception as e:
+            ERROR_LOGGER.exception(f'Failed to load model from {model_path}')
 
         try:
             model.fit(data, epochs=10, verbose=1)
@@ -261,7 +267,7 @@ class RulesetLearner:
         except Exception as e:
             ERROR_LOGGER.exception(f'Failed to fit model...')
 
-        model.save(load_from)
+        model.save(desired_path)
 
     def shape_tensor(self, sample, label):
         sample = tf.reshape(sample, (1, self.game_class.RULE_SPEC.num_dimensions))
