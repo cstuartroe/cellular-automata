@@ -1,10 +1,13 @@
-from math import pi, sin, cos
+from math import pi, sin, cos, ceil
 
-from direct.showbase.ShowBase import ShowBase
+from direct.showbase.ShowBase import ShowBase, exitfunc
 from direct.task import Task
 from panda3d.core import PointLight, VBase4, NodePath, Geom, GeomVertexWriter, GeomVertexFormat, GeomVertexData, \
     GeomTriangles, GeomNode
+import imageio
+from tqdm import tqdm
 
+import os
 
 SR2 = 2 ** .5
 
@@ -163,17 +166,20 @@ class RhomdoRender(NodePath):
         tris.addVertex(9)
         tris.closePrimitive()
 
-        # step 3) make a Geom object to hold the primitives
         rhomGeom = Geom(vdata)
         rhomGeom.addPrimitive(tris)
-        # now put squareGeom in a GeomNode. You can now position your geometry in the scene graph.
         self.geomnode.addGeom(rhomGeom)
 
 
-class RhomdosRender(ShowBase):
-    def __init__(self, game):
+class RhomdosRender:
+    def __init__(self, game, duration=None, storage_path="storage/3d/frame", fps=30, as_gif=False, gif_name=None):
         self.game = game
-        ShowBase.__init__(self)
+        self.duration = duration
+        self.storage_path = storage_path
+        self.fps = fps
+        self.as_gif = as_gif
+        self.gif_name = gif_name
+        self.base = ShowBase(windowType=('offscreen' if as_gif else None))
 
         depth, height, width = game.shape
         self.rhomdos = []
@@ -194,25 +200,48 @@ class RhomdosRender(ShowBase):
         self.plnp.setPos(0, 0, (game.shape[0] * SR2) + 40)
         render.setLight(self.plnp)
 
-        # Add the spinCameraTask procedure to the task manager.
-        self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
-        self.taskMgr.add(self.updateClock, "UpdateClock")
-        self.clock = 0
+        if self.as_gif:
+            self.base.movie(self.storage_path, duration=self.duration, fps=self.fps)
 
-    # Define a procedure to move the camera.
+        self.base.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
+        self.base.taskMgr.add(self.updateClock, "UpdateClock")
+
+        self.frame = 0
+        self.game_step = 0
+
     def spinCameraTask(self, task):
         angleDegrees = task.time * 40.0
         angleRadians = angleDegrees * (pi / 180.0)
-        self.camera.setPos(60 * sin(angleRadians), -60 * cos(angleRadians), 32)
-        self.camera.setHpr(angleDegrees, -30, 0)
+        self.base.camera.setPos(60 * sin(angleRadians), -60 * cos(angleRadians), 32)
+        self.base.camera.setHpr(angleDegrees, -30, 0)
         return Task.cont
+    
+    def run(self):
+        if self.as_gif:
+            for i in tqdm(list(range(self.duration*self.fps))):
+                self.base.taskMgr.step()
+            self.generate_gif()
+        else:
+            while True:
+                self.base.taskMgr.step()
 
     def updateClock(self, task):
+        self.frame = task.time
+
         adjusted_time = task.time * 8
-        if round(adjusted_time) > self.clock:
+        if ceil(adjusted_time) > self.game_step:
             self.updateRhomdos()
-            self.clock = round(adjusted_time)
-        return Task.cont
+            self.game_step = ceil(adjusted_time)
+
+        else:
+            return Task.cont
+
+    def generate_gif(self):
+        with imageio.get_writer(self.gif_name, mode='I') as writer:
+            for i in tqdm(list(range(1, self.duration*self.fps))):
+                filename = f"{self.storage_path}_{str(i).rjust(4, '0')}.png"
+                writer.append_data(imageio.imread(filename))
+                os.remove(filename)
 
     def updateRhomdos(self):
         self.game.advance()
