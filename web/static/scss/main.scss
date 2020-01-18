@@ -12,6 +12,14 @@ input[type="submit"] {
   text-align: center;
 }
 
+a {
+  color: #0000aa;
+}
+
+a:hover {
+  text-decoration: none;
+}
+
 #grad_scale {
   font-size: 9px;
 }
@@ -42,4 +50,13 @@ input[type="submit"] {
 
 .main{
     text-align:center
+}
+
+.gif-row img {
+  width: 100%;
+  padding-bottom: 30px;
+}
+
+.header a h3 {
+  font-size: calc(2vh + .75vw);
 }

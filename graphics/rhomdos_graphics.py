@@ -233,8 +233,7 @@ class RhomdosRender:
             self.updateRhomdos()
             self.game_step = ceil(adjusted_time)
 
-        else:
-            return Task.cont
+        return Task.cont
 
     def generate_gif(self):
         with imageio.get_writer(self.gif_name, mode='I') as writer:
