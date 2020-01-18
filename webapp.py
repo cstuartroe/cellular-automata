@@ -3,12 +3,10 @@ import random
 import string
 import ruleset_learning as RL
 import os
-import pickle
 import logging
 from logging import INFO, ERROR
 from web.mongo_utils import MongoUtility
 from games import name_to_class
-import numpy as np
 
 
 app = Flask(__name__)
@@ -144,16 +142,13 @@ def index(path):
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
 
-    try:
-        sess_id = request.args['game_id']
-        game_name = request.args['game_name']
-        rating = int(request.args['rating'])
-        dec_rating = (rating - 1)/4
-    except Exception as e:
-        sess_id = 'ywthnjtc'
-        game_name = 'RedVsBlue'
-        rating = 4
-        dec_rating = (rating - 1)/4
+    INFO_LOGGER.info(str(request.args))
+
+    sess_id = request.args['game_id']
+    game_name = request.args['game_name']
+    rating = int(request.args['rating'])
+
+    dec_rating = (rating - 1)/4
 
     INFO_LOGGER.info(f'Starting submit sequence for {sess_id} with rating {rating}')
 
@@ -169,8 +164,7 @@ def submit():
 
     INFO_LOGGER.info(f'Finished submission sequence for {sess_id}')
 
-    with open("web/thank_you.html", "r") as fh:
-        return fh.read()
+    return ''
 
 
 if __name__ == '__main__':
