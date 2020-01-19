@@ -16,7 +16,7 @@ model_load_from = f'storage/models/{game_name}_model.h5'
 
 if __name__ == '__main__':
 
-    image_files = os.listdir('storage/3d')
+    image_files = os.listdir('storage/3D')
 
     for file in image_files:
         os.remove(f'storage/3D/{file}')
