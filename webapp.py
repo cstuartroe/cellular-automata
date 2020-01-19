@@ -115,7 +115,7 @@ def generate():
             mngf = 0
 
         else:
-            while not unique:
+            while not unique and count < 50:
                 file_path = random.choice(image_files)
                 count += 1
 
@@ -129,6 +129,13 @@ def generate():
                 s = info[0]
                 mxgf = info[1]
                 mngf = info[2]
+                count += 1
+
+        if count >= 50:
+            sess_id = 'none'
+            s = 0
+            mxgf = 0
+            mngf = 0
 
     INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
 
