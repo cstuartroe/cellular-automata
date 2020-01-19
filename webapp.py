@@ -101,9 +101,7 @@ def generate():
     elif game_name == 'Rhomdos':
 
         count = 0
-
         unique = False
-
         image_files = os.listdir('storage/images/Rhomdos')
         file_path = ''
 
@@ -121,7 +119,12 @@ def generate():
 
                 sess_id = file_path.split('_')[1].split('.')[0]
 
-                info = mu.get_rhomdos_info(sess_id)
+                try:
+                    info = mu.get_rhomdos_info(sess_id)
+                except TypeError:
+                    s = 0
+                    mxgf = 0
+                    mngf = 0
 
                 if info[3] < 0:
                     unique = True
@@ -131,7 +134,7 @@ def generate():
                 mngf = info[2]
                 count += 1
 
-        if count >= 50:
+        if count >= 40:
             sess_id = 'none'
             s = 0
             mxgf = 0
