@@ -13,7 +13,6 @@ import sys
 INFO_LOGGER = logging.getLogger('info_logger')
 ERROR_LOGGER = logging.getLogger('error_logger')
 
-
 class RulesetLearner:
     def __init__(self, game_class, objective_function, game_args, game_kwargs, num_frames, num_trials):
         self.game_class = game_class
@@ -24,6 +23,7 @@ class RulesetLearner:
         self.num_trials = num_trials
         self.num_layers = 6
         self.best = []
+        self.steps_per_epoch = 5
 
     def monte_ruleset(self, rulevector):
         ruleargs, rulekwargs = self.game_class.rulevector2args(rulevector)
@@ -261,7 +261,9 @@ class RulesetLearner:
             ERROR_LOGGER.exception(f'Failed to load model from {model_path}')
 
         try:
-            model.fit(data, epochs=10, verbose=1)
+            num_samples = samples.shape[0]
+            epochs = int(num_samples/self.steps_per_epoch)
+            model.fit(data, epochs=epochs, verbose=1, steps_per_epoch=self.steps_per_epoch)
             INFO_LOGGER.info('Model successfully fit!')
         except Exception as e:
             ERROR_LOGGER.exception(f'Failed to fit model...')
