@@ -103,7 +103,7 @@ def generate():
         count = 0
         unique = False
         image_files = os.listdir('storage/images/Rhomdos')
-        file_path = ''
+        file_path = 'none'
 
         if len(image_files) <= 1:
             unique = True
@@ -114,8 +114,10 @@ def generate():
 
         else:
             while not unique and count < 50:
-                file_path = random.choice(image_files)
-                count += 1
+
+                while 'none' in file_path:
+                    file_path = random.choice(image_files)
+                    count += 1
 
                 sess_id = file_path.split('_')[1].split('.')[0]
 
