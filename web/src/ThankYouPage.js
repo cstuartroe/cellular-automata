@@ -9,7 +9,7 @@ class ThankYouPage extends Component{
         <a id="another" href={"/" + this.props.game_name + "/rate"}>Do another?</a>
         <br/>
         <br/>
-        <img src="/static/img/thankyou.jpg" alt="Thanks" style={{maxWidth: "100%", height: "auto"}}/>
+        <img src="/static/img/thankyou.jpg" alt="Thanks"/>
       </div>
     )
   }

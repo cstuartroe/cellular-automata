@@ -1,5 +1,19 @@
+$light_blue: #75acff;
+$med_blue: #428eff;
+
 body {
   text-align: center;
+}
+
+p {
+  margin: 0;
+  padding: 2vh;
+}
+
+img {
+   max-width: 100%;
+   height: auto;
+   padding: 2vh;
 }
 
 form {
@@ -13,7 +27,7 @@ input[type="submit"] {
 }
 
 a {
-  color: #0000aa;
+  color: $light_blue;
 }
 
 a:hover {
@@ -25,7 +39,7 @@ a:hover {
 }
 
 .rate_button{
-  background-color: #1f58b7;
+  background-color: $light_blue;
   border: none;
   color: white;
   padding: 15px 32px;
@@ -34,14 +48,18 @@ a:hover {
   display: inline-block;
   font-size: 16px;
   border-radius: 12px;
-  -webkit-transition-duration: 0.4s; /* Safari */
-  transition-duration: 0.4s;
-  border: 2px solid #1f58b7;
+  border: 2px solid $light_blue;
+  margin-top: 3vh;
 }
 
 .rate_button:hover {
-  background-color: #FFFFFF;
+  background-color: white;
   color: black;
+}
+
+.rate_button, .radio-p {
+  -webkit-transition-duration: 0.4s; /* Safari */
+  transition-duration: 0.4s;
 }
 
 #another {
@@ -54,9 +72,49 @@ a:hover {
 
 .gif-row img {
   width: 100%;
+  padding: 0;
   padding-bottom: 30px;
 }
 
 .header a h3 {
   font-size: calc(2vh + .75vw);
+}
+
+@media (min-width: 768px) {
+  .rating-box {
+    padding-top: 5vh;
+  }
+}
+
+.radio-p {
+  border: 2px solid white;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.radio-p:hover {
+  border: 2px solid $light_blue;
+}
+
+.radio-p-selected, .radio-p-selected:hover {
+  border: 2px solid $light_blue;
+  background-color: $light_blue;
+}
+
+.constrained {
+  max-width: 90vh;
+}
+
+.about p {
+  text-align: justify;
+}
+
+.about img {
+  display: inline-block;
+}
+
+.about p.caption {
+  text-align: center;
+  padding-top: 1vh;
 }

@@ -66,7 +66,7 @@ class GridGraphics:
             if not self.as_gif:
                 self.root.update_idletasks()
                 self.root.update()
-                # time.sleep(.1)
+                time.sleep(.1)
 
             self.draw()
             self.game.advance()

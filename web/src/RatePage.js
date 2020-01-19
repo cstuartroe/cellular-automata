@@ -30,6 +30,7 @@ class RatePage extends Component {
         .then(response => response.json())
         .then(data => {
           this.setState(data);
+          console.log(data);
         });
     }
 
@@ -83,26 +84,30 @@ class RatePage extends Component {
       ];
 
       return(
-        <div>
-          <h2>Does this gif look more like structured life or a staticky TV?</h2>
-          {img}
-          <p>{ai_message}</p>
+        <div className="container constrained" style={{padding: "2vh"}}>
+          <div className="row">
+            <div className="col-12 col-md-6">
+              <p>Does this gif look more like structured life or a staticky TV?</p>
+              {img}
+              <p>{ai_message}</p>
+            </div>
+            <div className="col-12 col-md-6 rating-box">
+              <form style={{padding: "2vh"}}>
+                {rating_messages.map((message, index) => (
+                  <div key={index} style={{padding: ".5vw"}}>
+                    <p className={"radio-p " + (this.state.rating === index ? "radio-p-selected" : "")}
+                      onClick={() => this.setState({rating: index})}>
+                      {" " + message}
+                    </p>
+                  </div>
+                ))}
+              </form>
 
-          <form>
-            {rating_messages.map((message, index) => (
-              <div key={index}>
-                <input type="radio" name="rating" value={index+1+""}
-                  checked={this.state.rating === index}
-                  onChange={() => this.setState({rating: index})} />
-                {" " + message}
-              </div>
-            ))}
-          </form>
+              <br/>
 
-          <br/>
-
-          <button className="rate_button" onClick={this.submit.bind(this)}>Submit</button>
-          <p id="grad_scale">The maximum gradient scalar was {this.state.grad_max}, and the minimum {this.state.grad_min}</p>
+              <button className="rate_button" onClick={this.submit.bind(this)}>Submit</button>
+            </div>
+          </div>
         </div>
       )
 
