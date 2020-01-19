@@ -26,7 +26,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 @app.route('/img/<gif_id>.gif')
 def get_gif(gif_id):
-    filepath = f'storage/images/{gif_id}.gif'
+    game_name = gif_id.split('_')[0]
+    filepath = f'storage/images/{game_name}/{gif_id}.gif'
     return send_file(filepath, mimetype='image/gif')
 
 
@@ -67,7 +68,7 @@ def generate():
     INFO_LOGGER.info(f'Epsilon loaded as {epsilon}.')
 
     sess_id = random_string()
-    file_name = f'storage/images/{game_name}_{sess_id}.gif'
+    file_name = f'storage/images/{game_name}/{game_name}_{sess_id}.gif'
 
     INFO_LOGGER.info(f'Starting generation sequence for {sess_id}.')
     model_load_from = f'storage/models/{game_name}_model.h5'
@@ -89,18 +90,45 @@ def generate():
         game_render = main_game_class(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
         graphs = graphics_class(game_render, as_gif=True, gif_name=file_name)
         graphs.run(FRAMES)
+        mu.add_game(rule_id=sess_id, game=game_render)
 
     elif game_name == 'Conway':
         game_render = main_game_class(**rule_kwargs, width=35, height=35, init_alive_prob=0.25)
         graphs = graphics_class(game_render, as_gif=True, gif_name=file_name)
         graphs.run(FRAMES)
+        mu.add_game(rule_id=sess_id, game=game_render)
 
     elif game_name == 'Rhomdos':
-        game_render = main_game_class(**rule_kwargs, width=12, height=12, depth=12, init_alive_prob=0.25)
-        graphs = graphics_class(game_render, duration=10, as_gif=True, gif_name=file_name)
-        graphs.run()
 
-    mu.add_game(rule_id=sess_id, game=game_render)
+        count = 0
+
+        unique = False
+
+        image_files = os.listdir('storage/images/Rhomdos')
+        file_path = ''
+
+        if len(image_files) <= 1:
+            unique = True
+            sess_id = 'none'
+            s = 0
+            mxgf = 0
+            mngf = 0
+
+        else:
+            while not unique:
+                file_path = random.choice(image_files)
+                count += 1
+
+                sess_id = file_path.split('_')[1].split('.')[0]
+
+                info = mu.get_rhomdos_info(sess_id)
+
+                if info[3] < 0:
+                    unique = True
+
+                s = info[0]
+                mxgf = info[1]
+                mngf = info[2]
 
     INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
 
@@ -112,10 +140,10 @@ def random_string(string_length=8):
     return ''.join(random.choice(letters) for i in range(string_length))
 
 
-def initialize_game(game_name):
+def initialize_game(game_name, game_kwargs=None):
 
     game_classes = name_to_class(game_name)
-    r = RL.RulesetLearner(game_classes[0], '', game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
+    r = RL.RulesetLearner(game_classes[0], '', game_args=None, game_kwargs=game_kwargs, num_frames=40, num_trials=5)
     mu = MongoUtility()
 
     if os.path.isfile(f'storage/static/{game_name}_ep_id.txt'):

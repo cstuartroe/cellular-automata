@@ -109,6 +109,8 @@ class MongoUtility:
         else:
             return self.storage.find_one({'key': game_id})
 
+
+
     def dump_and_train(self, game_name, dump_after):
 
         game_class = name_to_class(game_name)[0]
@@ -158,6 +160,10 @@ class MongoUtility:
             else:
                 return dump_after
 
+    def get_rhomdos_info(self, sess_id):
+        result = self.pre_train.find_one({'game_name': 'Rhomdos', 'key': sess_id})
+
+        return result['grad_steps'], result['grad_max'], result['grad_min'], result['rating']
 
 
 
