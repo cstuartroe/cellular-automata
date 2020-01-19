@@ -17,7 +17,8 @@ INFO_LOGGER = logging.getLogger('info_logger')
 ERROR_LOGGER = logging.getLogger('error_logger')
 ERROR_LOGGER.isEnabledFor(ERROR)
 FRAMES = 50
-DUMP_AFTER = 5
+
+DUMP_AFTER = {'Conway': 5, 'RedVsBlue': 5, 'Rhomdos': 5}
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=INFO, filename='storage/logs/cellauto.log', filemode='w')
@@ -58,7 +59,7 @@ def generate():
 
     r, mu = initialize_game(game_name)
 
-    epsilon = float(mu.get_epsilon())
+    epsilon = float(mu.get_epsilon(game_name))
 
     if epsilon > 0.85:
         epsilon = 0.85
@@ -77,7 +78,7 @@ def generate():
 
     epsilon += EPSILON_STEP
 
-    mu.set_epsilon(epsilon)
+    mu.set_epsilon(epsilon, game_name)
 
     mu.send_sample(mu.sample_to_json(sess_id, game_name=game_name, ruleset=new_test,
                                      grad_steps=s, grad_max=mxgf, grad_min=mngf))
@@ -99,7 +100,7 @@ def generate():
         graphs = graphics_class(game_render, duration=10, as_gif=True, gif_name=file_name)
         graphs.run()
 
-    # mu.add_game(rule_id=sess_id, game=conway)
+    mu.add_game(rule_id=sess_id, game=game_render)
 
     INFO_LOGGER.info(f'Successfully ran {FRAMES} iterations and generated gif.')
 
@@ -117,21 +118,21 @@ def initialize_game(game_name):
     r = RL.RulesetLearner(game_classes[0], '', game_args=None, game_kwargs=None, num_frames=40, num_trials=5)
     mu = MongoUtility()
 
-    if os.path.isfile('storage/static/epsilon_id.txt'):
+    if os.path.isfile(f'storage/static/{game_name}_ep_id.txt'):
         try:
-            with open('storage/static/epsilon_id.txt', 'r') as file:
+            with open(f'storage/static/{game_name}_ep_id.txt', 'r') as file:
                 ep_id = file.readline()
-            mu = MongoUtility(ep_id)
+            mu = MongoUtility(game_name, ep_id)
         except FileNotFoundError:
             ERROR_LOGGER.exception('Could not load epsilon id file.')
 
     else:
-        mu.initialize_epsilon(EPSILON_START)
-        with open('storage/static/epsilon_id.txt', 'w+') as file:
-            file.write(str(mu.ep_id))
+        mu.initialize_epsilon(EPSILON_START, game_name)
+        with open(f'storage/static/{game_name}_ep_id.txt', 'w+') as file:
+            file.write(str(mu.ep_id[game_name]))
 
         r.train_suggestion_model(init_only=True)
-        INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {mu.get_epsilon()}.')
+        INFO_LOGGER.info(f'Trained initial model and initialized epsilon to {mu.get_epsilon(game_name)}.')
 
     return r, mu
 
@@ -139,8 +140,9 @@ def initialize_game(game_name):
 @app.route('/setep')
 def set_ep():
     ep = request.args['epsilon']
+    name = request.args['game_name']
     mu = MongoUtility()
-    mu.initialize_epsilon(ep)
+    mu.initialize_epsilon(ep, game_name=name)
 
     return 'True'
 
@@ -166,13 +168,14 @@ def submit():
 
     mu = MongoUtility()
 
+    mu.update_rating(sess_id, dec_rating)
+    mu.prune_samples()
+
     num_untrained_samples = mu.count_by_name(game_name)
 
-    if num_untrained_samples >= DUMP_AFTER:
+    if num_untrained_samples >= DUMP_AFTER[game_name]:
         INFO_LOGGER.info(f'New training started for {game_name} on {num_untrained_samples} samples...')
-        mu.dump_and_train(game_name)
-
-    mu.update_rating(sess_id, dec_rating)
+        DUMP_AFTER[game_name] = mu.dump_and_train(game_name, DUMP_AFTER[game_name])
 
     INFO_LOGGER.info(f'Finished submission sequence for {sess_id}')
 

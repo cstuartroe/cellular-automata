@@ -4,37 +4,44 @@ from bson.objectid import ObjectId
 import numpy as np
 from ruleset_learning import RulesetLearner
 from games import ProbabilisticConway, RedVsBlue, Rhomdos, name_to_class
+import logging
+
+INFO_LOGGER = logging.getLogger('info_logger')
+ERROR_LOGGER = logging.getLogger('error_logger')
 
 class MongoUtility:
 
-    def __init__(self, ep_id=''):
+    def __init__(self, game_name='', ep_id=''):
 
         client = MongoClient(MONGO_END_POINT, username=MONGO_USER, password=MONGO_PWD)
         db = client.biotaornada
         self.ep_col = db.epsilon
         self.pre_train = db.pre_training
         self.storage = db.storage
-        self.ep_id = ep_id
+        self.ep_id = {game_name: ep_id}
 
-    def initialize_epsilon(self, init_epsilon):
-        if self.ep_col.estimated_document_count() == 0:
-            self.ep_id = self.ep_col.insert_one({'epsilon': init_epsilon}).inserted_id
-        elif self.ep_col.estimated_document_count() == 1:
-            self.ep_id = self.ep_col.find_one()['_id']
-            self.set_epsilon(init_epsilon)
+    def initialize_epsilon(self, init_epsilon, game_name):
+        num_results = self.count_by_name(game_name, ep=True)
+
+        if num_results == 0:
+            self.ep_id[game_name] = self.ep_col.insert_one(
+                {'game_name': game_name, 'epsilon': init_epsilon}
+            ).inserted_id
+        elif num_results == 1:
+            self.ep_id = self.ep_col.find_one({'game_name': game_name})['_id']
+            self.set_epsilon(init_epsilon, game_name)
         else:
             MongoUtility.remove_all_documents(self.ep_col)
-            self.ep_id = self.ep_col.insert_one({'epsilon': init_epsilon}).inserted_id
+            self.ep_id[game_name] = self.ep_col.insert_one(
+                {'game_name': game_name, 'epsilon': init_epsilon}
+            ).inserted_id
 
-    def get_epsilon(self):
-        return self.ep_col.find_one()['epsilon']
+    def get_epsilon(self, game_name):
+        return self.ep_col.find_one({'game_name': game_name})['epsilon']
 
-    def set_epsilon(self, epsilon):
+    def set_epsilon(self, epsilon, game_name):
         new_value = {'$set': {'epsilon': epsilon}}
-        self.ep_col.update_one({'_id': ObjectId(self.ep_id)}, new_value)
-
-    def build_sample_doc(self, ruleset, value):
-        pass
+        self.ep_col.update_one({'_id': ObjectId(self.ep_id[game_name])}, new_value)
 
     @staticmethod
     def remove_all_documents(collection):
@@ -46,9 +53,11 @@ class MongoUtility:
     def get_doc_count(collection):
         return collection.estimated_document_count()
 
-    def count_by_name(self, game_name, pre=True):
+    def count_by_name(self, game_name, pre=True, ep=False):
         if pre:
             results = self.pre_train.find({'game_name': game_name})
+        elif ep:
+            results = self.ep_col.find({'game_name': game_name})
         else:
             results = self.storage.find({'game_name': game_name})
 
@@ -100,11 +109,12 @@ class MongoUtility:
         else:
             return self.storage.find_one({'key': game_id})
 
-    def dump_and_train(self, game_name):
+    def dump_and_train(self, game_name, dump_after):
 
         game_class = name_to_class(game_name)[0]
 
-        self.prune_samples()
+        trainer = RulesetLearner(game_class, '', game_args=[], game_kwargs={'width': -1, 'height': -1},
+                                 num_frames=20, num_trials=5)
 
         results = self.pre_train.find({'game_name': game_name})
         num_samples = results.count()
@@ -112,30 +122,41 @@ class MongoUtility:
         samples = np.zeros((num_samples, game_class.RULE_SPEC.num_dimensions))
         labels = np.zeros((num_samples, 1))
 
-        count = 0
+        steps_per = trainer.steps_per_epoch
 
-        for document in results:
-            ruleset = eval(document['ruleset'])
-            rating = float(document['rating'])
-            doc_id = document['_id']
+        INFO_LOGGER.info(f'STEPS PER: {steps_per}')
+        INFO_LOGGER.info(f'SAMPLES/STEPSPER: {int(num_samples/steps_per)}')
 
-            rule_array = np.reshape(np.asarray(ruleset), (game_class.RULE_SPEC.num_dimensions, ))
+        if int(num_samples/steps_per) <= 0 or int(num_samples % steps_per) != 0:
+            return dump_after
 
-            samples[count] = rule_array
-            labels[count] = rating
+        else:
+            count = 0
 
-            self.storage.insert_one(document)
-            self.pre_train.remove({'_id': doc_id})
+            for document in results:
+                ruleset = eval(document['ruleset'])
+                rating = float(document['rating'])
+                doc_id = document['_id']
 
-            count += 1
+                rule_array = np.reshape(np.asarray(ruleset), (game_class.RULE_SPEC.num_dimensions, ))
 
-        print(samples)
-        print(labels)
+                samples[count] = rule_array
+                labels[count] = rating
 
-        trainer = RulesetLearner(game_class, '', game_args=[], game_kwargs={'width': -1, 'height': -1},
-                                 num_frames=20, num_trials=5)
+                self.storage.insert_one(document)
+                self.pre_train.remove({'_id': doc_id})
 
-        trainer.continue_training(game_name=game_name, samples=samples, labels=labels)
+                count += 1
+
+            print(samples)
+            print(labels)
+
+            trainer.continue_training(game_name=game_name, samples=samples, labels=labels)
+
+            if dump_after < 50:
+                return 50
+            else:
+                return dump_after
 
 
 
