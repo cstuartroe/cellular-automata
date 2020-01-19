@@ -121,18 +121,18 @@ def generate():
 
                 try:
                     info = mu.get_rhomdos_info(sess_id)
+                    if info[3] < 0:
+                        unique = True
+
+                    s = info[0]
+                    mxgf = info[1]
+                    mngf = info[2]
+                    count += 1
                 except TypeError:
                     s = 0
                     mxgf = 0
                     mngf = 0
-
-                if info[3] < 0:
                     unique = True
-
-                s = info[0]
-                mxgf = info[1]
-                mngf = info[2]
-                count += 1
 
         if count >= 40:
             sess_id = 'none'
