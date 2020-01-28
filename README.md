@@ -8,7 +8,7 @@ look interesting or organic.
 
 ## Humans Wanted
 
-Our machine learning models (found in the `ruleset_learner` python file) are continuously trained by human feedback on our
+Our machine learning models (found in the `ruleset_learning.py` python file) are continuously trained by human feedback on our
 website (linked above). Eventually, once we have aggregated enough data to be effective, we will be adding a convolutional
 neural network which we hope to use for the purpose of automatically scoring rulsets as "interesting" or not. This step of 
 automation will allow for drastic acceleration in our ability to develop, test, and search for optimal rulesets in a variety
